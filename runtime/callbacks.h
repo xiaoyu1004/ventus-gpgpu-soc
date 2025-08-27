@@ -14,7 +14,37 @@
 #ifndef CALLBACKS_H
 #define CALLBACKS_H
 
+#include <iostream>
+#include <cassert>
+#include <fstream>
+#include <vector>
+
 #include <ventus_runtime.h>
+
+#ifndef NDEBUG
+#define DBGPRINT(format, ...) do { printf("[VXDRV] " format "", ##__VA_ARGS__); } while (0)
+#else
+#define DBGPRINT(format, ...) ((void)0)
+#endif
+
+#define CHECK_ERR(_expr, _cleanup) \
+  do { \
+    auto err = _expr; \
+    if (err == 0) \
+      break; \
+    printf("[VXDRV] Error: '%s' returned %d!\n", #_expr, (int)err); \
+    _cleanup \
+  } while (false)
+
+inline uint64_t aligned_size(uint64_t size, uint64_t alignment) {
+  assert(0 == (alignment & (alignment - 1)));
+  return (size + alignment - 1) & ~(alignment - 1);
+}
+
+inline bool is_aligned(uint64_t addr, uint64_t alignment) {
+  assert(0 == (alignment & (alignment - 1)));
+  return 0 == (addr & (alignment - 1));
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,43 +61,25 @@ typedef struct {
   int (*dev_caps) (vx_device_h hdevice, uint32_t caps_id, uint64_t *value);
 
   // allocate device memory and return address
-  int (*mem_alloc) (vx_device_h hdevice, uint64_t size, int flags, vx_buffer_h* hbuffer);
-
-  // reserve memory address range
-  int (*mem_reserve) (vx_device_h hdevice, uint64_t address, uint64_t size, int flags, vx_buffer_h* hbuffer);
+  int (*mem_alloc) (vx_device_h hdevice, uint64_t size, uint64_t* addr);
 
   // release device memory
-  int (*mem_free) (vx_buffer_h hbuffer);
-
-  // set device memory access rights
-  int (*mem_access) (vx_buffer_h hbuffer, uint64_t offset, uint64_t size, int flags);
-
-  // return device memory address
-  int (*mem_address) (vx_buffer_h hbuffer, uint64_t* address);
+  int (*mem_free) (vx_device_h hdevice, uint64_t addr);
 
   // get device memory info
   int (*mem_info) (vx_device_h hdevice, uint64_t* mem_free, uint64_t* mem_used);
 
   // Copy bytes from host to device memory
-  int (*copy_to_dev) (vx_buffer_h hbuffer, const void* host_ptr, uint64_t dst_offset, uint64_t size);
+  int (*copy_to_dev) (vx_device_h hdevice, uint64_t addr, const void* host_ptr, uint64_t size);
 
   // Copy bytes from device memory to host
-  int (*copy_from_dev) (void* host_ptr, vx_buffer_h hbuffer, uint64_t src_offset, uint64_t size);
+  int (*copy_from_dev) (vx_device_h hdevice, void* host_ptr, uint64_t addr, uint64_t size);
 
   // Start device execution
-  int (*start) (vx_device_h hdevice, vx_buffer_h hkernel, vx_buffer_h harguments);
+  int (*start) (vx_device_h hdevice, uint64_t knl_addr, uint32_t *knl_args, unsigned knl_args_count);
 
   // Wait for device ready with milliseconds timeout
   int (*ready_wait) (vx_device_h hdevice, uint64_t timeout);
-
-  // read device configuration registers
-  int (*dcr_read) (vx_device_h hdevice, uint32_t addr, uint32_t* value);
-
-  // write device configuration registers
-  int (*dcr_write) (vx_device_h hdevice, uint32_t addr, uint32_t value);
-
-  // query device performance counter
-  int (*mpm_query) (vx_device_h hdevice, uint32_t addr, uint32_t core_id, uint64_t* value);
 
 } callbacks_t;
 

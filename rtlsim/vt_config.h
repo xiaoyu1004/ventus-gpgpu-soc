@@ -1,0 +1,10 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define CACHE_BLOCK_SIZE  64
+#define RAM_PAGE_SIZE     4096
+#define USER_BASE_ADDR    0x80000000
+#define ALLOC_BASE_ADDR   USER_BASE_ADDR
+#define GLOBAL_MEM_SIZE    0x100000000UL  // 4 GB
+
+#endif

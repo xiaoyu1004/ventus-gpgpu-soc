@@ -11,13 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef PROCESSOR_H
+#define PROCESSOR_H
 
 #include <stdint.h>
-
-namespace vortex {
-
-class RAM;
+#include <physical_mem.h>
 
 class Processor {
 public:
@@ -25,16 +23,13 @@ public:
   Processor();
   ~Processor();
 
-  void attach_ram(RAM* ram);
+  void attach_ram(PhysicalMemory* ram);
 
   void run();
 
-  void dcr_write(uint32_t addr, uint32_t value);
-
 private:
-
   class Impl;
   Impl* impl_;
 };
 
-}
+#endif

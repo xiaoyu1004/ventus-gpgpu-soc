@@ -13,27 +13,22 @@
 
 #include "processor.h"
 
-#include "Vrtlsim_shim.h"
+#include "gpgpu_top_wrapper.h"
 
-#ifdef VCD_OUTPUT
-#include <verilated_vcd_c.h>
+#ifdef FST_OUTPUT
+#include <verilated_fst_c.h>
 #endif
 
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <mem.h>
 
-#include <VX_config.h>
 #include <ostream>
 #include <list>
 #include <queue>
 #include <vector>
 #include <sstream>
 #include <unordered_map>
-
-#include <dram_sim.h>
-#include <util.h>
 
 #ifndef MEM_CLOCK_RATIO
 #define MEM_CLOCK_RATIO 1
@@ -61,8 +56,6 @@ typedef uint64_t Word;
 
 #define VL_WDATA_GETW(lwp, i, n, w) \
   VL_SEL_IWII(0, n * w, 0, 0, lwp, i * w, w)
-
-using namespace vortex;
 
 static uint32_t g_mem_bank_addr_width = (PLATFORM_MEMORY_ADDR_WIDTH - log2ceil(PLATFORM_MEMORY_NUM_BANKS));
 
@@ -172,15 +165,6 @@ public:
     device_->reset = 1;
 
     this->cout_flush();
-  }
-
-  void dcr_write(uint32_t addr, uint32_t value) {
-    device_->dcr_wr_valid = 1;
-    device_->dcr_wr_addr  = addr;
-    device_->dcr_wr_data  = value;
-    this->tick();
-    device_->dcr_wr_valid = 0;
-    this->tick();
   }
 
 private:
