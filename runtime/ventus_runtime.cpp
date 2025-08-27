@@ -93,29 +93,28 @@ int vx_ready_wait(vx_device_h hdevice, uint64_t timeout) {
   return (g_callbacks.ready_wait)(hdevice, timeout);
 }
 
-int vx_upload_kernel_bytes(vx_device_h hdevice, const void* content, uint64_t size, vx_buffer_h* hbuffer) {
-  if (nullptr == hdevice || nullptr == content || size <= 8 || nullptr == hbuffer)
+int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, uint64_t* addr) {
+  if (nullptr == hdevice || nullptr == content || 0 == size || nullptr == addr)
     return -1;
 
-  auto bytes = reinterpret_cast<const uint64_t*>(content);
+  uint64_t _addr;
 
-  auto min_vma = *bytes++;
-  auto max_vma = *bytes++;
-  auto bin_size = size - 2 * 8;
-  auto runtime_size = (max_vma - min_vma);
-
-  CHECK_ERR(vx_copy_to_dev(_hbuffer, bytes, 0, bin_size), {
-    vx_mem_free(_hbuffer);
+  CHECK_ERR(vx_mem_alloc(hdevice, size, &_addr), {
     return err;
     });
 
-  *hbuffer = _hbuffer;
+  CHECK_ERR(vx_copy_to_dev(hdevice, _addr, content, size), {
+    vx_mem_free(hdevice, _addr);
+    return err;
+    });
+
+  *addr = _addr;
 
   return 0;
 }
 
-int vx_upload_kernel_file(vx_device_h hdevice, const char* filename, vx_buffer_h* hbuffer) {
-  if (nullptr == hdevice || nullptr == filename || nullptr == hbuffer)
+int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr) {
+  if (nullptr == hdevice || nullptr == filename || nullptr == addr)
     return -1;
 
   std::ifstream ifs(filename);
@@ -132,52 +131,7 @@ int vx_upload_kernel_file(vx_device_h hdevice, const char* filename, vx_buffer_h
   ifs.read(content.data(), size);
 
   // upload buffer
-  CHECK_ERR(vx_upload_kernel_bytes(hdevice, content.data(), size, hbuffer), {
-    return err;
-    });
-
-  return 0;
-}
-
-int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, vx_buffer_h* hbuffer) {
-  if (nullptr == hdevice || nullptr == content || 0 == size || nullptr == hbuffer)
-    return -1;
-
-  vx_buffer_h _hbuffer;
-
-  CHECK_ERR(vx_mem_alloc(hdevice, size, VX_MEM_READ, &_hbuffer), {
-    return err;
-    });
-
-  CHECK_ERR(vx_copy_to_dev(_hbuffer, content, 0, size), {
-    vx_mem_free(_hbuffer);
-    return err;
-    });
-
-  *hbuffer = _hbuffer;
-
-  return 0;
-}
-
-int vx_upload_file(vx_device_h hdevice, const char* filename, vx_buffer_h* hbuffer) {
-  if (nullptr == hdevice || nullptr == filename || nullptr == hbuffer)
-    return -1;
-
-  std::ifstream ifs(filename);
-  if (!ifs) {
-    std::cerr << "Error: " << filename << " not found" << std::endl;
-    return -1;
-  }
-
-  // read file content
-  ifs.seekg(0, ifs.end);
-  auto size = ifs.tellg();
-  std::vector<char> content(size);
-  ifs.seekg(0, ifs.beg);
-  ifs.read(content.data(), size);
-
-  // upload buffer
-  CHECK_ERR(vx_upload_bytes(hdevice, content.data(), size, hbuffer), {
+  CHECK_ERR(vx_upload_bytes(hdevice, content.data(), size, addr), {
     return err;
     });
 

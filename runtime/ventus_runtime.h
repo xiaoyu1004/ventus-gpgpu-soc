@@ -95,48 +95,31 @@ int vx_dev_close(vx_device_h hdevice);
 int vx_dev_caps(vx_device_h hdevice, uint32_t caps_id, uint64_t *value);
 
 // allocate device memory and return address
-int vx_mem_alloc(vx_device_h hdevice, uint64_t size, int flags, vx_buffer_h* hbuffer);
-
-// reserve memory address range
-int vx_mem_reserve(vx_device_h hdevice, uint64_t address, uint64_t size, int flags, vx_buffer_h* hbuffer);
+int vx_mem_alloc(vx_device_h hdevice, uint64_t size, uint64_t* addr);
 
 // release device memory
-int vx_mem_free(vx_buffer_h hbuffer);
-
-// set device memory access rights
-int vx_mem_access(vx_buffer_h hbuffer, uint64_t offset, uint64_t size, int flags);
-
-// return device memory address
-int vx_mem_address(vx_buffer_h hbuffer, uint64_t* address);
+int vx_mem_free(vx_device_h hdevice, uint64_t addr);
 
 // get device memory info
 int vx_mem_info(vx_device_h hdevice, uint64_t* mem_free, uint64_t* mem_used);
 
 // Copy bytes from host to device memory
-int vx_copy_to_dev(vx_buffer_h hbuffer, const void* host_ptr, uint64_t dst_offset, uint64_t size);
+int vx_copy_to_dev(vx_device_h hdevice, uint64_t addr, const void* host_ptr, uint64_t size);
 
 // Copy bytes from device memory to host
-int vx_copy_from_dev(void* host_ptr, vx_buffer_h hbuffer, uint64_t src_offset, uint64_t size);
+int vx_copy_from_dev(vx_device_h hdevice, void* host_ptr, uint64_t addr, uint64_t size);
 
 // Start device execution
-int vx_start(vx_device_h hdevice, vx_buffer_h hkernel, vx_buffer_h harguments);
+int vx_start(vx_device_h hdevice, uint64_t knl_addr, uint32_t *knl_args, unsigned knl_args_count);
 
 // Wait for device ready with milliseconds timeout
 int vx_ready_wait(vx_device_h hdevice, uint64_t timeout);
 
-////////////////////////////// UTILITY FUNCTIONS //////////////////////////////
-
 // upload bytes to device
-int vx_upload_kernel_bytes(vx_device_h hdevice, const void* content, uint64_t size, vx_buffer_h* hbuffer);
+int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, uint64_t* addr);
 
 // upload file to device
-int vx_upload_kernel_file(vx_device_h hdevice, const char* filename, vx_buffer_h* hbuffer);
-
-// upload bytes to device
-int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, vx_buffer_h* hbuffer);
-
-// upload file to device
-int vx_upload_file(vx_device_h hdevice, const char* filename, vx_buffer_h* hbuffer);
+int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr);
 
 #ifdef __cplusplus
 }

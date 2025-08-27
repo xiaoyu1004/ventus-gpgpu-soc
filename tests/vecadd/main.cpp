@@ -31,10 +31,9 @@ int test = -1;
 uint32_t count = 0;
 
 vx_device_h device = nullptr;
-vx_buffer_h src_buffer = nullptr;
-vx_buffer_h dst_buffer = nullptr;
-vx_buffer_h krnl_buffer = nullptr;
-vx_buffer_h args_buffer = nullptr;
+uint64_t src_buffer;
+uint64_t dst_buffer;
+uint64_t krnl_buffer;
 kernel_arg_t kernel_arg = {};
 
 static void show_usage() {
@@ -68,10 +67,9 @@ static void parse_args(int argc, char **argv) {
 
 void cleanup() {
   if (device) {
-    vx_mem_free(src_buffer);
-    vx_mem_free(dst_buffer);
-    vx_mem_free(krnl_buffer);
-    vx_mem_free(args_buffer);
+    vx_mem_free(device, src_buffer);
+    vx_mem_free(device, dst_buffer);
+    vx_mem_free(device, krnl_buffer);
     vx_dev_close(device);
   }
 }
@@ -97,13 +95,13 @@ int run_memcopy_test(const kernel_arg_t& kernel_arg) {
   // upload source buffer
   std::cout << "write source buffer to local memory" << std::endl;
   auto t0 = std::chrono::high_resolution_clock::now();
-  RT_CHECK(vx_copy_to_dev(dst_buffer, h_src.data(), 0, buf_size));
+  RT_CHECK(vx_copy_to_dev(device, dst_buffer, h_src.data(), buf_size));
   auto t1 = std::chrono::high_resolution_clock::now();
 
   // download destination buffer
   std::cout << "read destination buffer from local memory" << std::endl;
   auto t2 = std::chrono::high_resolution_clock::now();
-  RT_CHECK(vx_copy_from_dev(h_dst.data(), dst_buffer, 0, buf_size));
+  RT_CHECK(vx_copy_from_dev(device, h_dst.data(), dst_buffer, buf_size));
   auto t3 = std::chrono::high_resolution_clock::now();
 
   // verify result
@@ -145,30 +143,26 @@ int run_kernel_test(const kernel_arg_t& kernel_arg) {
 
   // Upload kernel binary
   std::cout << "Upload kernel binary" << std::endl;
-  RT_CHECK(vx_upload_kernel_file(device, kernel_file, &krnl_buffer));
-
-  // upload kernel argument
-  std::cout << "upload kernel argument" << std::endl;
-  RT_CHECK(vx_upload_bytes(device, &kernel_arg, sizeof(kernel_arg_t), &args_buffer));
+  RT_CHECK(vx_upload_file(device, kernel_file, &krnl_buffer));
 
   auto time_start = std::chrono::high_resolution_clock::now();
 
   // upload source buffer
   auto t0 = std::chrono::high_resolution_clock::now();
-  RT_CHECK(vx_copy_to_dev(src_buffer, h_src.data(), 0, buf_size));
+  RT_CHECK(vx_copy_to_dev(device, src_buffer, h_src.data(), buf_size));
   auto t1 = std::chrono::high_resolution_clock::now();
 
   // start device
   std::cout << "start execution" << std::endl;
   auto t2 = std::chrono::high_resolution_clock::now();
-  RT_CHECK(vx_start(device, krnl_buffer, args_buffer));
+  RT_CHECK(vx_start(device, krnl_buffer, (uint32_t*)&kernel_arg, 3));
   RT_CHECK(vx_ready_wait(device, VX_MAX_TIMEOUT));
   auto t3 = std::chrono::high_resolution_clock::now();
 
   // download destination buffer
   std::cout << "read destination buffer from local memory" << std::endl;
   auto t4 = std::chrono::high_resolution_clock::now();
-  RT_CHECK(vx_copy_from_dev(h_dst.data(), dst_buffer, 0, buf_size));
+  RT_CHECK(vx_copy_from_dev(device, h_dst.data(), dst_buffer, buf_size));
   auto t5 = std::chrono::high_resolution_clock::now();
 
   // verify result
@@ -221,10 +215,8 @@ int main(int argc, char *argv[]) {
 
   // allocate device memory
   std::cout << "allocate device memory" << std::endl;
-  RT_CHECK(vx_mem_alloc(device, buf_size, VX_MEM_READ, &src_buffer));
-  RT_CHECK(vx_mem_address(src_buffer, &kernel_arg.src_addr));
-  RT_CHECK(vx_mem_alloc(device, buf_size, VX_MEM_WRITE, &dst_buffer));
-  RT_CHECK(vx_mem_address(dst_buffer, &kernel_arg.dst_addr));
+  RT_CHECK(vx_mem_alloc(device, buf_size, &src_buffer));
+  RT_CHECK(vx_mem_alloc(device, buf_size, &dst_buffer));
 
   kernel_arg.count = count;
 
