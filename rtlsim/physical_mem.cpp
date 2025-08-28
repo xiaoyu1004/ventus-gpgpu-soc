@@ -18,6 +18,7 @@ bool PhysicalMemory::alloc(paddr_t *paddr, uint64_t size) {
     }
     m_alloc_records[g_malloc_paddr] = page_num;
     *paddr = g_malloc_paddr;
+    g_malloc_paddr += (page_num * m_pagesize);
     return true;
 }
 
@@ -33,6 +34,7 @@ bool PhysicalMemory::free(paddr_t paddr) {
             FATAL("free error\n");
         }
     }
+    g_malloc_paddr -= (page_num * m_pagesize);
     return false;
 }
 

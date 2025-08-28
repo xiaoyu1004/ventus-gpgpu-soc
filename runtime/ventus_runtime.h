@@ -22,10 +22,10 @@
 extern "C" {
 #endif
 
-typedef void* vx_device_h;
-typedef void* vx_buffer_h;
+  typedef void* vx_device_h;
+  typedef void* vx_buffer_h;
 
-// device caps ids
+  // device caps ids
 #define VX_CAPS_VERSION             0x0
 #define VX_CAPS_NUM_THREADS         0x1
 #define VX_CAPS_NUM_WARPS           0x2
@@ -85,41 +85,69 @@ typedef void* vx_buffer_h;
 #define KNL_PRINT_ADDR 48
 #define KNL_PRINT_SIZE 52
 
-// open the device and connect to it
-int vx_dev_open(vx_device_h* hdevice);
+  struct dim3
+  {
+    dim3(uint32_t x = 1, uint32_t y = 1, uint32_t z = 1)
+      : x(x), y(y), z(z) {
+    }
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+  };
 
-// Close the device when all the operations are done
-int vx_dev_close(vx_device_h hdevice);
-   
-// return device configurations
-int vx_dev_caps(vx_device_h hdevice, uint32_t caps_id, uint64_t *value);
+  struct metadata_buffer_t
+  {
+    uint32_t knl_entry;
+    uint32_t knl_arg_base;
+    uint32_t knl_work_dim;
+    uint32_t knl_gl_size_x;
+    uint32_t knl_gl_size_y;
+    uint32_t knl_gl_size_z;
+    uint32_t knl_lc_size_x;
+    uint32_t knl_lc_size_y;
+    uint32_t knl_lc_size_z;
+    uint32_t knl_gl_offset_x;
+    uint32_t knl_gl_offset_y;
+    uint32_t knl_gl_offset_z;
+    uint32_t knl_print_addr;
+    uint32_t knl_print_size;
+  };
 
-// allocate device memory and return address
-int vx_mem_alloc(vx_device_h hdevice, uint64_t size, uint64_t* addr);
+  // open the device and connect to it
+  int vx_dev_open(vx_device_h* hdevice);
 
-// release device memory
-int vx_mem_free(vx_device_h hdevice, uint64_t addr);
+  // Close the device when all the operations are done
+  int vx_dev_close(vx_device_h hdevice);
 
-// get device memory info
-int vx_mem_info(vx_device_h hdevice, uint64_t* mem_free, uint64_t* mem_used);
+  // return device configurations
+  int vx_dev_caps(vx_device_h hdevice, uint32_t caps_id, uint64_t* value);
 
-// Copy bytes from host to device memory
-int vx_copy_to_dev(vx_device_h hdevice, uint64_t addr, const void* host_ptr, uint64_t size);
+  // allocate device memory and return address
+  int vx_mem_alloc(vx_device_h hdevice, uint64_t size, uint64_t* addr);
 
-// Copy bytes from device memory to host
-int vx_copy_from_dev(vx_device_h hdevice, void* host_ptr, uint64_t addr, uint64_t size);
+  // release device memory
+  int vx_mem_free(vx_device_h hdevice, uint64_t addr);
 
-// Start device execution
-int vx_start(vx_device_h hdevice, uint64_t knl_addr, uint32_t *knl_args, unsigned knl_args_count);
+  // get device memory info
+  int vx_mem_info(vx_device_h hdevice, uint64_t* mem_free, uint64_t* mem_used);
 
-// Wait for device ready with milliseconds timeout
-int vx_ready_wait(vx_device_h hdevice, uint64_t timeout);
+  // Copy bytes from host to device memory
+  int vx_copy_to_dev(vx_device_h hdevice, uint64_t addr, const void* host_ptr, uint64_t size);
 
-// upload bytes to device
-int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, uint64_t* addr);
+  // Copy bytes from device memory to host
+  int vx_copy_from_dev(vx_device_h hdevice, void* host_ptr, uint64_t addr, uint64_t size);
 
-// upload file to device
-int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr);
+  // Start device execution
+  int vx_start(vx_device_h hdevice, dim3 grid, dim3 block, uint64_t knl_addr, uint32_t* knl_args, unsigned knl_args_count);
+
+  // Wait for device ready with milliseconds timeout
+  int vx_ready_wait(vx_device_h hdevice, uint64_t timeout);
+
+  // upload bytes to device
+  int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, uint64_t* addr);
+
+  // upload file to device
+  int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr);
 
 #ifdef __cplusplus
 }

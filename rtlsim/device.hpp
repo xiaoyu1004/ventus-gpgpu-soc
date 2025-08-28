@@ -13,6 +13,8 @@
 
 #include <vt_config.h>
 #include <processor.h>
+#include <cta_scheduler.h>
+#include <ventus_runtime.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -42,7 +44,7 @@ public:
     return 0;
   }
 
-  int get_caps(uint32_t caps_id, uint64_t *value) {
+  int get_caps(uint32_t caps_id, uint64_t* value) {
     uint64_t _value;
     // switch (caps_id) {
     // case VX_CAPS_VERSION:
@@ -112,7 +114,7 @@ public:
     return 0;
   }
 
-  int start(uint64_t krnl_addr, uint64_t args_addr) {
+  int start(metadata_buffer_t& metadata) {
     // ensure prior run completed
     if (future_.valid()) {
       future_.wait();
@@ -121,9 +123,9 @@ public:
     // set kernel info
 
     // start new run
-    future_ = std::async(std::launch::async, [&]{
+    future_ = std::async(std::launch::async, [&] {
       processor_.run();
-    });
+      });
 
     return 0;
   }
@@ -146,6 +148,7 @@ public:
 
 private:
   PhysicalMemory      ram_;
+  CTAScheduler        cta_sched_;
   Processor           processor_;
   std::future<void>   future_;
 };

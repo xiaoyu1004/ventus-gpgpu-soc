@@ -12,6 +12,7 @@
 // limitations under the License.
 
 #include "processor.h"
+#include "cta_scheduler.h"
 
 #include "gpgpu_top_wrapper.h"
 
@@ -383,14 +384,13 @@ private:
 
   std::array<bool, PLATFORM_MEMORY_NUM_BANKS> mem_rd_rsp_ready_;
 
-  DramSim dram_sim_;
-
-  Vrtlsim_shim* device_;
+  Vgpgpu_top_wrapper* device_;
 
   RAM* ram_;
+  CTAScheduler *cta_sched_;
 
 #ifdef VCD_OUTPUT
-  VerilatedVcdC *tfp_;
+  VerilatedFstC *tfp_;
 #endif
 };
 

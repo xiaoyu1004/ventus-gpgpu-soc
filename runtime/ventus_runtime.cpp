@@ -21,24 +21,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-struct metadata_buffer_t
-{
-  uint32_t knl_entry;
-  uint32_t knl_arg_base;
-  uint32_t knl_work_dim;
-  uint32_t knl_gl_size_x;
-  uint32_t knl_gl_size_y;
-  uint32_t knl_gl_size_z;
-  uint32_t knl_lc_size_x;
-  uint32_t knl_lc_size_y;
-  uint32_t knl_lc_size_z;
-  uint32_t knl_gl_offset_x;
-  uint32_t knl_gl_offset_y;
-  uint32_t knl_gl_offset_z;
-  uint32_t knl_print_addr;
-  uint32_t knl_print_size;
-};
-
 static callbacks_t g_callbacks;
 
 typedef int (*vx_dev_init_t)(callbacks_t*);
@@ -85,8 +67,23 @@ int vx_copy_from_dev(vx_device_h hdevice, void* host_ptr, uint64_t addr, uint64_
   return (g_callbacks.copy_from_dev)(hdevice, host_ptr, addr, size);
 }
 
-int vx_start(vx_device_h hdevice, uint64_t knl_addr, uint32_t *knl_args, unsigned knl_args_count) {
-  return (g_callbacks.start)(hdevice, knl_addr, knl_args, knl_args_count);
+int vx_start(vx_device_h hdevice, dim3 grid, dim3 block, uint64_t knl_entry, uint64_t knl_arg_base) {
+  metadata_buffer_t metadata;
+  metadata.knl_entry = (uint32_t)knl_entry;
+  metadata.knl_arg_base = (uint32_t)knl_arg_base;
+  metadata.knl_work_dim = 0;
+  metadata.knl_gl_size_x = grid.x * block.x;
+  metadata.knl_gl_size_y = grid.y * block.y;
+  metadata.knl_gl_size_z = grid.z * block.z;
+  metadata.knl_lc_size_x = block.x;
+  metadata.knl_lc_size_y = block.y;
+  metadata.knl_lc_size_z = block.z;
+  metadata.knl_gl_offset_x = 0;
+  metadata.knl_gl_offset_y = 0;
+  metadata.knl_gl_offset_z = 0;
+  metadata.knl_print_addr = 0;
+  metadata.knl_print_size = 0;
+  return (g_callbacks.start)(hdevice, metadata);
 }
 
 int vx_ready_wait(vx_device_h hdevice, uint64_t timeout) {

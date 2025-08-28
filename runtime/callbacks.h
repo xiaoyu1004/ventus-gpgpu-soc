@@ -76,7 +76,7 @@ typedef struct {
   int (*copy_from_dev) (vx_device_h hdevice, void* host_ptr, uint64_t addr, uint64_t size);
 
   // Start device execution
-  int (*start) (vx_device_h hdevice, uint64_t knl_addr, uint32_t *knl_args, unsigned knl_args_count);
+  int (*start) (vx_device_h hdevice, metadata_buffer_t &metadata);
 
   // Wait for device ready with milliseconds timeout
   int (*ready_wait) (vx_device_h hdevice, uint64_t timeout);
