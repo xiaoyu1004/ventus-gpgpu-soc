@@ -12,6 +12,7 @@
 // limitations under the License.
 
 #include "callbacks.h"
+#include "ventus_runtime.h"
 
 #include <unistd.h>
 #include <string.h>
@@ -22,6 +23,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 static callbacks_t g_callbacks;
+static uint64_t g_csr_knl_addr;
 
 typedef int (*vx_dev_init_t)(callbacks_t*);
 
@@ -83,11 +85,24 @@ int vx_start(vx_device_h hdevice, dim3 grid, dim3 block, uint64_t knl_entry, uin
   metadata.knl_gl_offset_z = 0;
   metadata.knl_print_addr = 0;
   metadata.knl_print_size = 0;
-  return (g_callbacks.start)(hdevice, metadata);
+
+  uint32_t metadata_size = sizeof(metadata);
+  CHECK_ERR(vx_mem_alloc(hdevice, metadata_size, &g_csr_knl_addr), {
+    return err;
+    });
+
+  CHECK_ERR(vx_copy_to_dev(hdevice, g_csr_knl_addr, &metadata, metadata_size), {
+    vx_mem_free(hdevice, g_csr_knl_addr);
+    return err;
+    });
+
+  return (g_callbacks.start)(hdevice, metadata, g_csr_knl_addr);
 }
 
 int vx_ready_wait(vx_device_h hdevice, uint64_t timeout) {
-  return (g_callbacks.ready_wait)(hdevice, timeout);
+  int ret = (g_callbacks.ready_wait)(hdevice, timeout);
+  vx_mem_free(hdevice, g_csr_knl_addr);
+  return ret;
 }
 
 int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, uint64_t* addr) {
@@ -119,7 +134,7 @@ int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr) {
     std::cerr << "Error: " << filename << " not found" << std::endl;
     return -1;
   }
-
+ 
   // read file content
   ifs.seekg(0, ifs.end);
   auto size = ifs.tellg();

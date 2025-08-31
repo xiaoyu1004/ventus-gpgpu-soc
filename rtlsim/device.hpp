@@ -13,7 +13,7 @@
 
 #include <vt_config.h>
 #include <processor.h>
-#include <cta_scheduler.h>
+#include <memory.h>
 #include <ventus_runtime.h>
 
 #include <stdint.h>
@@ -114,7 +114,7 @@ public:
     return 0;
   }
 
-  int start(metadata_buffer_t& metadata) {
+  int start(metadata_buffer_t& metadata, uint64_t csr_knl_addr) {
     // ensure prior run completed
     if (future_.valid()) {
       future_.wait();
@@ -124,7 +124,7 @@ public:
 
     // start new run
     future_ = std::async(std::launch::async, [&] {
-      processor_.run();
+      processor_.run(metadata, csr_knl_addr);
       });
 
     return 0;
@@ -148,7 +148,6 @@ public:
 
 private:
   PhysicalMemory      ram_;
-  CTAScheduler        cta_sched_;
   Processor           processor_;
   std::future<void>   future_;
 };

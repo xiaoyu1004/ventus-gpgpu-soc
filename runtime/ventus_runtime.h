@@ -18,14 +18,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "common.h"
 
-  typedef void* vx_device_h;
-  typedef void* vx_buffer_h;
+typedef void* vx_device_h;
+typedef void* vx_buffer_h;
 
-  // device caps ids
+// device caps ids
 #define VX_CAPS_VERSION             0x0
 #define VX_CAPS_NUM_THREADS         0x1
 #define VX_CAPS_NUM_WARPS           0x2
@@ -64,93 +62,40 @@ extern "C" {
 // ready wait timeout
 #define VX_MAX_TIMEOUT              (24*60*60*1000)   // 24 Hr
 
-// device memory access
-#define VX_MEM_READ                 0x1
-#define VX_MEM_WRITE                0x2
-#define VX_MEM_READ_WRITE           0x3
-#define VX_MEM_PIN_MEMORY           0x4
-
-#define KNL_ENTRY 0
-#define KNL_ARG_BASE 4
-#define KNL_WORK_DIM 8
-#define KNL_GL_SIZE_X 12
-#define KNL_GL_SIZE_Y 16
-#define KNL_GL_SIZE_Z 20
-#define KNL_LC_SIZE_X 24
-#define KNL_LC_SIZE_Y 28
-#define KNL_LC_SIZE_Z 32
-#define KNL_GL_OFFSET_X 36
-#define KNL_GL_OFFSET_Y 40
-#define KNL_GL_OFFSET_Z 44
-#define KNL_PRINT_ADDR 48
-#define KNL_PRINT_SIZE 52
-
-  struct dim3
-  {
-    dim3(uint32_t x = 1, uint32_t y = 1, uint32_t z = 1)
-      : x(x), y(y), z(z) {
-    }
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-  };
-
-  struct metadata_buffer_t
-  {
-    uint32_t knl_entry;
-    uint32_t knl_arg_base;
-    uint32_t knl_work_dim;
-    uint32_t knl_gl_size_x;
-    uint32_t knl_gl_size_y;
-    uint32_t knl_gl_size_z;
-    uint32_t knl_lc_size_x;
-    uint32_t knl_lc_size_y;
-    uint32_t knl_lc_size_z;
-    uint32_t knl_gl_offset_x;
-    uint32_t knl_gl_offset_y;
-    uint32_t knl_gl_offset_z;
-    uint32_t knl_print_addr;
-    uint32_t knl_print_size;
-  };
-
   // open the device and connect to it
-  int vx_dev_open(vx_device_h* hdevice);
+int vx_dev_open(vx_device_h* hdevice);
 
-  // Close the device when all the operations are done
-  int vx_dev_close(vx_device_h hdevice);
+// Close the device when all the operations are done
+int vx_dev_close(vx_device_h hdevice);
 
-  // return device configurations
-  int vx_dev_caps(vx_device_h hdevice, uint32_t caps_id, uint64_t* value);
+// return device configurations
+int vx_dev_caps(vx_device_h hdevice, uint32_t caps_id, uint64_t* value);
 
-  // allocate device memory and return address
-  int vx_mem_alloc(vx_device_h hdevice, uint64_t size, uint64_t* addr);
+// allocate device memory and return address
+int vx_mem_alloc(vx_device_h hdevice, uint64_t size, uint64_t* addr);
 
-  // release device memory
-  int vx_mem_free(vx_device_h hdevice, uint64_t addr);
+// release device memory
+int vx_mem_free(vx_device_h hdevice, uint64_t addr);
 
-  // get device memory info
-  int vx_mem_info(vx_device_h hdevice, uint64_t* mem_free, uint64_t* mem_used);
+// get device memory info
+int vx_mem_info(vx_device_h hdevice, uint64_t* mem_free, uint64_t* mem_used);
 
-  // Copy bytes from host to device memory
-  int vx_copy_to_dev(vx_device_h hdevice, uint64_t addr, const void* host_ptr, uint64_t size);
+// Copy bytes from host to device memory
+int vx_copy_to_dev(vx_device_h hdevice, uint64_t addr, const void* host_ptr, uint64_t size);
 
-  // Copy bytes from device memory to host
-  int vx_copy_from_dev(vx_device_h hdevice, void* host_ptr, uint64_t addr, uint64_t size);
+// Copy bytes from device memory to host
+int vx_copy_from_dev(vx_device_h hdevice, void* host_ptr, uint64_t addr, uint64_t size);
 
-  // Start device execution
-  int vx_start(vx_device_h hdevice, dim3 grid, dim3 block, uint64_t knl_addr, uint32_t* knl_args, unsigned knl_args_count);
+// Start device execution
+int vx_start(vx_device_h hdevice, dim3 grid, dim3 block, uint64_t knl_entry, uint64_t knl_arg_base);
 
-  // Wait for device ready with milliseconds timeout
-  int vx_ready_wait(vx_device_h hdevice, uint64_t timeout);
+// Wait for device ready with milliseconds timeout
+int vx_ready_wait(vx_device_h hdevice, uint64_t timeout);
 
-  // upload bytes to device
-  int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, uint64_t* addr);
+// upload bytes to device
+int vx_upload_bytes(vx_device_h hdevice, const void* content, uint64_t size, uint64_t* addr);
 
-  // upload file to device
-  int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr);
-
-#ifdef __cplusplus
-}
-#endif
+// upload file to device
+int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr);
 
 #endif // __VX_VORTEX_H__

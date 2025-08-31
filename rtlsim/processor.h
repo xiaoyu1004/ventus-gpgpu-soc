@@ -15,17 +15,18 @@
 #define PROCESSOR_H
 
 #include <stdint.h>
-#include <physical_mem.h>
+
+#include "memory.h"
+#include "common.h"
 
 class Processor {
 public:
-
   Processor();
   ~Processor();
 
   void attach_ram(PhysicalMemory* ram);
 
-  void run();
+  void run(metadata_buffer_t& metadata, uint64_t csr_knl_addr);
 
 private:
   class Impl;

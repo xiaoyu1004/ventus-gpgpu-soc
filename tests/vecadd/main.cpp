@@ -4,7 +4,7 @@
 #include <chrono>
 #include <vector>
 
-#include <ventus_runtime.h>
+#include "ventus_runtime.h"
 
 #define NONCE  0xdeadbeef
 
@@ -23,59 +23,61 @@
 typedef struct {
   uint32_t count;
   uint32_t src_addr;
-  uint32_t dst_addr;  
+  uint32_t dst_addr;
 } kernel_arg_t;
 
-const char* kernel_file = "kernel.vtbin";
-int test = -1;
-uint32_t count = 0;
+const char* kernel_file = "vecadd.bin";
+int test = 1;
+uint32_t count = 128;
 
 vx_device_h device = nullptr;
 uint64_t src_buffer;
 uint64_t dst_buffer;
-uint64_t krnl_buffer;
+uint64_t knl_entry;
+uint64_t knl_arg_base;
 kernel_arg_t kernel_arg = {};
 
 static void show_usage() {
-   std::cout << "Vortex Test." << std::endl;
-   std::cout << "Usage: [-t testno][-k: kernel][-n words][-h: help]" << std::endl;
+  std::cout << "Vortex Test." << std::endl;
+  std::cout << "Usage: [-t testno][-k: kernel][-n words][-h: help]" << std::endl;
 }
 
-static void parse_args(int argc, char **argv) {
-  int c;
-  while ((c = getopt(argc, argv, "n:t:k:h")) != -1) {
-    switch (c) {
-    case 'n':
-      count = atoi(optarg);
-      break;
-    case 't':
-      test = atoi(optarg);
-      break;
-    case 'k':
-      kernel_file = optarg;
-      break;
-    case 'h':
-      show_usage();
-      exit(0);
-      break;
-    default:
-      show_usage();
-      exit(-1);
-    }
-  }
+static void parse_args(int argc, char** argv) {
+  // int c;
+  // while ((c = getopt(argc, argv, "n:t:k:h")) != -1) {
+  //   switch (c) {
+  //   case 'n':
+  //     count = atoi(optarg);
+  //     break;
+  //   case 't':
+  //     test = atoi(optarg);
+  //     break;
+  //   case 'k':
+  //     kernel_file = optarg;
+  //     break;
+  //   case 'h':
+  //     show_usage();
+  //     exit(0);
+  //     break;
+  //   default:
+  //     show_usage();
+  //     exit(-1);
+  //   }
+  // }
 }
 
 void cleanup() {
   if (device) {
     vx_mem_free(device, src_buffer);
     vx_mem_free(device, dst_buffer);
-    vx_mem_free(device, krnl_buffer);
+    vx_mem_free(device, knl_entry);
+    vx_mem_free(device, knl_arg_base);
     vx_dev_close(device);
   }
 }
 
 inline uint32_t shuffle(int i, uint32_t value) {
-  return (value << i) | (value & ((1 << i)-1));;
+  return (value << i) | (value & ((1 << i) - 1));;
 }
 
 int run_memcopy_test(const kernel_arg_t& kernel_arg) {
@@ -87,7 +89,7 @@ int run_memcopy_test(const kernel_arg_t& kernel_arg) {
 
   // update source buffer
   for (uint32_t i = 0; i < num_points; ++i) {
-    h_src[i] = shuffle(i, NONCE);
+    h_src[i] = i * 2;
   }
 
   auto time_start = std::chrono::high_resolution_clock::now();
@@ -109,7 +111,7 @@ int run_memcopy_test(const kernel_arg_t& kernel_arg) {
   std::cout << "verify result" << std::endl;
   for (uint32_t i = 0; i < num_points; ++i) {
     auto cur = h_dst[i];
-    auto ref = shuffle(i, NONCE);
+    auto ref = i * 2;
     if (cur != ref) {
       printf("*** error: [%d] expected=%d, actual=%d\n", i, ref, cur);
       ++errors;
@@ -138,12 +140,8 @@ int run_kernel_test(const kernel_arg_t& kernel_arg) {
 
   // update source buffer
   for (uint32_t i = 0; i < num_points; ++i) {
-    h_src[i] = shuffle(i, NONCE);
+    h_src[i] = i * 2;
   }
-
-  // Upload kernel binary
-  std::cout << "Upload kernel binary" << std::endl;
-  RT_CHECK(vx_upload_file(device, kernel_file, &krnl_buffer));
 
   auto time_start = std::chrono::high_resolution_clock::now();
 
@@ -152,10 +150,16 @@ int run_kernel_test(const kernel_arg_t& kernel_arg) {
   RT_CHECK(vx_copy_to_dev(device, src_buffer, h_src.data(), buf_size));
   auto t1 = std::chrono::high_resolution_clock::now();
 
+  // knl args
+  RT_CHECK(vx_mem_alloc(device, sizeof(kernel_arg), &knl_arg_base));
+  RT_CHECK(vx_copy_to_dev(device, knl_arg_base, &kernel_arg, sizeof(kernel_arg)));
+
   // start device
   std::cout << "start execution" << std::endl;
   auto t2 = std::chrono::high_resolution_clock::now();
-  RT_CHECK(vx_start(device, krnl_buffer, (uint32_t*)&kernel_arg, 3));
+  dim3 grid = { num_points / 128, 1, 1 };
+  dim3 block = { 128, 1, 1 };
+  RT_CHECK(vx_start(device, grid, block, knl_entry, knl_arg_base));
   RT_CHECK(vx_ready_wait(device, VX_MAX_TIMEOUT));
   auto t3 = std::chrono::high_resolution_clock::now();
 
@@ -170,7 +174,7 @@ int run_kernel_test(const kernel_arg_t& kernel_arg) {
   std::cout << "verify result" << std::endl;
   for (uint32_t i = 0; i < num_points; ++i) {
     auto cur = h_dst[i];
-    auto ref = shuffle(i, NONCE);
+    auto ref = 2 * h_src[i];
     if (cur != ref) {
       printf("*** error: [%d] expected=%d, actual=%d\n", i, ref, cur);
       ++errors;
@@ -192,7 +196,7 @@ int run_kernel_test(const kernel_arg_t& kernel_arg) {
   return errors;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   // parse command arguments
   parse_args(argc, argv);
 
@@ -205,13 +209,17 @@ int main(int argc, char *argv[]) {
   RT_CHECK(vx_dev_open(&device));
 
   uint64_t num_cores;
-  RT_CHECK(vx_dev_caps(device, VX_CAPS_NUM_CORES, &num_cores));
+  // RT_CHECK(vx_dev_caps(device, VX_CAPS_NUM_CORES, &num_cores));
 
-  uint32_t num_points = count * num_cores;
+  uint32_t num_points = count;
   uint32_t buf_size = num_points * sizeof(int32_t);
 
   std::cout << "number of points: " << num_points << std::endl;
   std::cout << "buffer size: " << buf_size << " bytes" << std::endl;
+
+   // Upload kernel binary
+  std::cout << "Upload kernel binary" << std::endl;
+  RT_CHECK(vx_upload_file(device, kernel_file, &knl_entry));
 
   // allocate device memory
   std::cout << "allocate device memory" << std::endl;
@@ -219,6 +227,8 @@ int main(int argc, char *argv[]) {
   RT_CHECK(vx_mem_alloc(device, buf_size, &dst_buffer));
 
   kernel_arg.count = count;
+  kernel_arg.src_addr = (uint32_t)src_buffer;
+  kernel_arg.dst_addr = (uint32_t)dst_buffer;
 
   std::cout << "dev_src=0x" << std::hex << kernel_arg.src_addr << std::endl;
   std::cout << "dev_dst=0x" << std::hex << kernel_arg.dst_addr << std::endl;

@@ -7,6 +7,12 @@
 #include <new>
 #include <cstddef>
 
+#define LOG(level, format, ...) do { printf("[" level "] " format, ##__VA_ARGS__); } while (0)
+#define INFO(format, ...) LOG("info", format, ##__VA_ARGS__);
+#define WARN(format, ...) LOG("warn", format, ##__VA_ARGS__);
+#define ERROR(format, ...) LOG("error", format, ##__VA_ARGS__); 
+#define FATAL(format, ...) LOG("fatal", format, ##__VA_ARGS__);
+
 typedef uint64_t paddr_t;
 
 class PhysicalMemory {

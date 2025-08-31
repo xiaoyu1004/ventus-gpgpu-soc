@@ -77,20 +77,20 @@ int vx_dev_init(callbacks_t* callbacks) {
     };
 
   callbacks->mem_info = [](vx_device_h hdevice, uint64_t* mem_free, uint64_t* mem_used) {
-    if (nullptr == hdevice)
-      return -1;
-    auto device = ((vt_device*)hdevice);
-    uint64_t _mem_free, _mem_used;
-    CHECK_ERR(device->mem_info(&_mem_free, &_mem_used), {
-      return err;
-      });
-    DBGPRINT("MEM_INFO: hdevice=%p, mem_free=%ld, mem_used=%ld\n", hdevice, _mem_free, _mem_used);
-    if (mem_free) {
-      *mem_free = _mem_free;
-    }
-    if (mem_used) {
-      *mem_used = _mem_used;
-    }
+    // if (nullptr == hdevice)
+    //   return -1;
+    // auto device = ((vt_device*)hdevice);
+    // uint64_t _mem_free, _mem_used;
+    // CHECK_ERR(device->mem_info(&_mem_free, &_mem_used), {
+    //   return err;
+    //   });
+    // DBGPRINT("MEM_INFO: hdevice=%p, mem_free=%ld, mem_used=%ld\n", hdevice, _mem_free, _mem_used);
+    // if (mem_free) {
+    //   *mem_free = _mem_free;
+    // }
+    // if (mem_used) {
+    //   *mem_used = _mem_used;
+    // }
     return 0;
     };
 
@@ -110,12 +110,12 @@ int vx_dev_init(callbacks_t* callbacks) {
     return device->download(host_ptr, addr, size);
     };
 
-  callbacks->start = [](vx_device_h hdevice, metadata_buffer_t& metadata) {
+  callbacks->start = [](vx_device_h hdevice, metadata_buffer_t& metadata, uint64_t csr_knl_addr) {
     if (nullptr == hdevice)
       return -1;
     DBGPRINT("START: hdevice=%p, knl_entry=%p, knl_args=%p\n", hdevice, metadata.knl_entry, metadata.knl_arg_base);
     auto device = ((vt_device*)hdevice);
-    return device->start(metadata);
+    return device->start(metadata, csr_knl_addr);
     };
 
   callbacks->ready_wait = [](vx_device_h hdevice, uint64_t timeout) {

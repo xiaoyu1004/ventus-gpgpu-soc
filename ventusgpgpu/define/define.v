@@ -8,7 +8,7 @@
 
 `define NUM_WARP 4'b1000 //the number of warp,CTA need
 
-`define NUM_THREAD 4 //the number of thread
+`define NUM_THREAD 32 //the number of thread
 
 `define NUM_LANE `NUM_THREAD
 

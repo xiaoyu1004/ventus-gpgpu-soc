@@ -1,1 +1,6 @@
 .vscode
+librtlsim.so.obj_dir
+*.bin
+*dump*
+*.so
+*.txt
