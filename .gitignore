@@ -4,3 +4,6 @@ librtlsim.so.obj_dir
 *dump*
 *.so
 *.txt
+*ll
+*.s
+*.elf
