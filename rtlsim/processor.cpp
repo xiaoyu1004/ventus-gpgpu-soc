@@ -18,7 +18,7 @@
 #define FST_OUTPUT
 
 #ifdef FST_OUTPUT
-#include <verilated_fst_c.h>
+#include <verilated_vcd_c.h>
 #endif
 
 #include <fstream>
@@ -95,9 +95,9 @@ public:
 
 #ifdef FST_OUTPUT
     Verilated::traceEverOn(true);
-    tfp_ = new VerilatedFstC();
+    tfp_ = new VerilatedVcdC();
     device_->trace(tfp_, 99);
-    tfp_->open("trace.fst");
+    tfp_->open("trace.vcd");
 #endif
 
     ram_ = nullptr;
@@ -346,7 +346,7 @@ private:
   dispatch_info_t *info_;
 
 #ifdef FST_OUTPUT
-  VerilatedFstC *tfp_;
+  VerilatedVcdC *tfp_;
 #endif
 };
 

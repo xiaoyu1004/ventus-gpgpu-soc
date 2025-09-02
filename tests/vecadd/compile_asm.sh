@@ -1,0 +1,3 @@
+/opt/workspace/ventus/llvm-project/install/bin/clang -target riscv32 -mcpu=ventus-gpgpu -nodefaultlibs -O3 -Wl,-T,/opt/workspace/ventus/llvm-project/install/../utils/ldscripts/ventus/elf32lriscv.ld vecadd.S -o vecadd.asm.elf
+/opt/workspace/ventus/llvm-project/install/bin/llvm-objdump -d --mattr=+v,+zfinx vecadd.asm.elf > vecadd.asm.s
+/opt/workspace/ventus/llvm-project/install/bin/llvm-objcopy -O binary vecadd.asm.elf vecadd.asm.bin

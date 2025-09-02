@@ -1,0 +1,79 @@
+Magic 271485
+Revision Verdi_O-2018.09-SP2-2
+
+; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
+viewPort 0 27 2000 691 146 65
+
+; File list:
+; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
+openDirFile -d / "" "/opt/workspace/ventus-gpgpu-soc/tests/vecadd/trace.fsdb"
+
+; file time scale:
+; fileTimeScale ### s|ms|us|ns|ps
+
+; signal spacing:
+signalSpacing 5
+
+; windowTimeUnit is used for zoom, cursor & marker
+; waveform viewport range
+zoom 687.790150 764.853150
+cursor 707.000000
+marker 0.000000
+
+; user define markers
+; userMarker time_pos marker_name color linestyle
+; visible top row signal index
+top 0
+; marker line index
+markerPos 7
+
+; event list
+; addEvent event_name event_expression
+; curEvent event_name
+
+
+
+COMPLEX_EVENT_BEGIN
+
+
+COMPLEX_EVENT_END
+
+
+
+; toolbar current search type
+; curSTATUS search_type
+curSTATUS ByChange
+
+
+addGroup "G1"
+activeDirFile "" "/opt/workspace/ventus-gpgpu-soc/tests/vecadd/trace.fsdb"
+addSignal -h 15 /TOP/gpgpu_top_wrapper/clk
+addSignal -h 15 -holdScope rst_n
+addSignal -h 15 -holdScope host_req_valid_i
+addSignal -h 15 -holdScope host_req_ready_o
+addSignal -h 15 -holdScope host_rsp_valid_o
+addSignal -h 15 -holdScope host_rsp_ready_i
+addSignal -h 15 -holdScope host_rsp_inflight_wg_buffer_host_wf_done_wg_id_o[5:0]
+addGroup "G2"
+
+; getSignalForm Scope Hierarchy Status
+; active file of getSignalForm
+activeDirFile "" "/opt/workspace/ventus-gpgpu-soc/tests/vecadd/trace.fsdb"
+
+GETSIGNALFORM_SCOPE_HIERARCHY_BEGIN
+getSignalForm close
+
+"/TOP"
+"/TOP/gpgpu_top_wrapper"
+"/TOP/gpgpu_top_wrapper/gpu_top"
+
+SCOPE_LIST_BEGIN
+"/TOP"
+"/TOP/defs_div_sqrt_mvp"
+"/TOP/gpgpu_top_wrapper"
+"/TOP/gpgpu_top_wrapper/gpu_top"
+SCOPE_LIST_END
+
+GETSIGNALFORM_SCOPE_HIERARCHY_END
+
+

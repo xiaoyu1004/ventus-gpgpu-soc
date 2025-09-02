@@ -26,7 +26,7 @@ VL_FLAGS += -DXLEN_$(XLEN)
 VL_FLAGS += $(RTL_INCLUDE)
 VL_FLAGS += $(RTL_PKGS)
 VL_FLAGS += --cc $(TOP) --top-module $(TOP)
-VL_FLAGS += --trace-fst --trace-structs -DFST_OUTPUT
+VL_FLAGS += --trace --trace-structs -DFST_OUTPUT
 VL_FLAGS += -timescale 1ns/1ps
 # warning
 VL_FLAGS += -Wno-WIDTHEXPAND

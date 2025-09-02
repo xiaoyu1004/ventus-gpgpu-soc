@@ -26,7 +26,7 @@ typedef struct {
   uint32_t dst_addr;
 } kernel_arg_t;
 
-const char *kernel_file = "vecadd.bin";
+const char *kernel_file = "vecadd.asm.bin";
 int test = 1;
 
 vx_device_h device = nullptr;

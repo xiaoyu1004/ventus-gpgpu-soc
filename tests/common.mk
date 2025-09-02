@@ -41,5 +41,8 @@ $(PROJECT).s: $(PROJECT).ll
 .depend: $(KNL_SRCS)
 	$(CC) $(CFLAGS) -MM $^ > .depend;
 
+verdi:
+	verdi -f ../file_list.f -ssf ./trace.fsdb &
+
 clean:
 	rm -rf *.elf *.bin *.dump.s *.log .depend $(PROJECT) *.ll *.s
