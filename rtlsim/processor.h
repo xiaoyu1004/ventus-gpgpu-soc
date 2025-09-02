@@ -26,7 +26,7 @@ public:
 
   void attach_ram(PhysicalMemory* ram);
 
-  void run(metadata_buffer_t& metadata, uint64_t csr_knl_addr);
+  void run(metadata_buffer_t metadata, uint64_t csr_knl_addr);
 
 private:
   class Impl;

@@ -1,22 +1,22 @@
-#include <iostream>
-#include <unistd.h>
-#include <string.h>
 #include <chrono>
+#include <iostream>
+#include <string.h>
+#include <unistd.h>
 #include <vector>
 
 #include "ventus_runtime.h"
 
-#define NONCE  0xdeadbeef
+#define NONCE 0xdeadbeef
 
-#define RT_CHECK(_expr)                                         \
-   do {                                                         \
-     int _ret = _expr;                                          \
-     if (0 == _ret)                                             \
-       break;                                                   \
-     printf("Error: '%s' returned %d!\n", #_expr, (int)_ret);   \
-	 cleanup();			                                              \
-     exit(-1);                                                  \
-   } while (false)
+#define RT_CHECK(_expr)                                                        \
+  do {                                                                         \
+    int _ret = _expr;                                                          \
+    if (0 == _ret)                                                             \
+      break;                                                                   \
+    printf("Error: '%s' returned %d!\n", #_expr, (int)_ret);                   \
+    cleanup();                                                                 \
+    exit(-1);                                                                  \
+  } while (false)
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -26,9 +26,8 @@ typedef struct {
   uint32_t dst_addr;
 } kernel_arg_t;
 
-const char* kernel_file = "vecadd.bin";
+const char *kernel_file = "vecadd.bin";
 int test = 1;
-uint32_t count = 128;
 
 vx_device_h device = nullptr;
 uint64_t src_buffer;
@@ -36,35 +35,6 @@ uint64_t dst_buffer;
 uint64_t knl_entry;
 uint64_t knl_arg_base;
 kernel_arg_t kernel_arg = {};
-
-static void show_usage() {
-  std::cout << "Vortex Test." << std::endl;
-  std::cout << "Usage: [-t testno][-k: kernel][-n words][-h: help]" << std::endl;
-}
-
-static void parse_args(int argc, char** argv) {
-  // int c;
-  // while ((c = getopt(argc, argv, "n:t:k:h")) != -1) {
-  //   switch (c) {
-  //   case 'n':
-  //     count = atoi(optarg);
-  //     break;
-  //   case 't':
-  //     test = atoi(optarg);
-  //     break;
-  //   case 'k':
-  //     kernel_file = optarg;
-  //     break;
-  //   case 'h':
-  //     show_usage();
-  //     exit(0);
-  //     break;
-  //   default:
-  //     show_usage();
-  //     exit(-1);
-  //   }
-  // }
-}
 
 void cleanup() {
   if (device) {
@@ -77,10 +47,11 @@ void cleanup() {
 }
 
 inline uint32_t shuffle(int i, uint32_t value) {
-  return (value << i) | (value & ((1 << i) - 1));;
+  return (value << i) | (value & ((1 << i) - 1));
+  ;
 }
 
-int run_memcopy_test(const kernel_arg_t& kernel_arg) {
+int run_memcopy_test(const kernel_arg_t &kernel_arg) {
   uint32_t num_points = kernel_arg.count;
   uint32_t buf_size = num_points * sizeof(int32_t);
 
@@ -121,17 +92,21 @@ int run_memcopy_test(const kernel_arg_t& kernel_arg) {
   auto time_end = std::chrono::high_resolution_clock::now();
 
   double elapsed;
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
   printf("upload time: %lg ms\n", elapsed);
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+  elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
   printf("download time: %lg ms\n", elapsed);
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
+  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end -
+                                                                  time_start)
+                .count();
   printf("Total elapsed time: %lg ms\n", elapsed);
 
   return errors;
 }
 
-int run_kernel_test(const kernel_arg_t& kernel_arg) {
+int run_kernel_test(const kernel_arg_t &kernel_arg) {
   uint32_t num_points = kernel_arg.count;
   uint32_t buf_size = num_points * sizeof(int32_t);
 
@@ -152,14 +127,20 @@ int run_kernel_test(const kernel_arg_t& kernel_arg) {
 
   // knl args
   RT_CHECK(vx_mem_alloc(device, sizeof(kernel_arg), &knl_arg_base));
-  RT_CHECK(vx_copy_to_dev(device, knl_arg_base, &kernel_arg, sizeof(kernel_arg)));
+  RT_CHECK(
+      vx_copy_to_dev(device, knl_arg_base, &kernel_arg, sizeof(kernel_arg)));
 
   // start device
   std::cout << "start execution" << std::endl;
   auto t2 = std::chrono::high_resolution_clock::now();
-  dim3 grid = { num_points / 128, 1, 1 };
-  dim3 block = { 128, 1, 1 };
-  RT_CHECK(vx_start(device, grid, block, knl_entry, knl_arg_base));
+  dim3 grid(num_points / 32, 1, 1);
+  dim3 block(32, 1, 1);
+  std::cout << std::dec << "grid.x:" << grid.x << ", grid.y:" << grid.y
+            << ", grid.z:" << grid.z << std::endl;
+  std::cout << std::dec << "block.x:" << block.x << ", block.y:" << block.y
+            << ", block.z:" << block.z << std::endl;
+
+  RT_CHECK(vx_start(device, grid, block, 0x80000130u, knl_arg_base));
   RT_CHECK(vx_ready_wait(device, VX_MAX_TIMEOUT));
   auto t3 = std::chrono::high_resolution_clock::now();
 
@@ -174,7 +155,7 @@ int run_kernel_test(const kernel_arg_t& kernel_arg) {
   std::cout << "verify result" << std::endl;
   for (uint32_t i = 0; i < num_points; ++i) {
     auto cur = h_dst[i];
-    auto ref = 2 * h_src[i];
+    auto ref = h_src[i];
     if (cur != ref) {
       printf("*** error: [%d] expected=%d, actual=%d\n", i, ref, cur);
       ++errors;
@@ -184,40 +165,38 @@ int run_kernel_test(const kernel_arg_t& kernel_arg) {
   auto time_end = std::chrono::high_resolution_clock::now();
 
   double elapsed;
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
   printf("upload time: %lg ms\n", elapsed);
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+  elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
   printf("execute time: %lg ms\n", elapsed);
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count();
+  elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count();
   printf("download time: %lg ms\n", elapsed);
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
+  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end -
+                                                                  time_start)
+                .count();
   printf("Total elapsed time: %lg ms\n", elapsed);
 
   return errors;
 }
 
-int main(int argc, char* argv[]) {
-  // parse command arguments
-  parse_args(argc, argv);
-
-  if (count == 0) {
-    count = 1;
-  }
-
+int main(int argc, char *argv[]) {
   // open device connection
   std::cout << "open device connection" << std::endl;
   RT_CHECK(vx_dev_open(&device));
 
-  uint64_t num_cores;
+  // uint64_t num_cores;
   // RT_CHECK(vx_dev_caps(device, VX_CAPS_NUM_CORES, &num_cores));
 
-  uint32_t num_points = count;
+  uint32_t num_points = 32;
   uint32_t buf_size = num_points * sizeof(int32_t);
 
   std::cout << "number of points: " << num_points << std::endl;
   std::cout << "buffer size: " << buf_size << " bytes" << std::endl;
 
-   // Upload kernel binary
+  // Upload kernel binary
   std::cout << "Upload kernel binary" << std::endl;
   RT_CHECK(vx_upload_file(device, kernel_file, &knl_entry));
 
@@ -226,7 +205,7 @@ int main(int argc, char* argv[]) {
   RT_CHECK(vx_mem_alloc(device, buf_size, &src_buffer));
   RT_CHECK(vx_mem_alloc(device, buf_size, &dst_buffer));
 
-  kernel_arg.count = count;
+  kernel_arg.count = num_points;
   kernel_arg.src_addr = (uint32_t)src_buffer;
   kernel_arg.dst_addr = (uint32_t)dst_buffer;
 

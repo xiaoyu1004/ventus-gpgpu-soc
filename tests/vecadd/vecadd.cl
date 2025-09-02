@@ -11,9 +11,9 @@ __kernel void vecadd(__global const float *src, __global float *dst, float a,
   //   }
   // }
 
-  if (tid < size) {
-    dst[tid] = 4 * src[tid];
-  } else {
-    dst[tid] = 8 * src[tid];
-  }
+  // if (tid < size) {
+    dst[tid] = src[tid];
+  // } else {
+  //   dst[tid] = 8 * src[tid];
+  // }
 }

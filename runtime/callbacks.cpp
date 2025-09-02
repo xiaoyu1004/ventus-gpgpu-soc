@@ -62,7 +62,7 @@ int vx_dev_init(callbacks_t* callbacks) {
     CHECK_ERR(device->mem_alloc(&dev_addr, size), {
       return err;
       });
-    DBGPRINT("MEM_ALLOC: hdevice=%p, size=%ld, addr=%p\n", hdevice, size, dev_addr);
+    DBGPRINT("MEM_ALLOC: hdevice=%p, size=%ld, addr=%lx\n", hdevice, size, dev_addr);
     *addr = dev_addr;
     return 0;
     };
@@ -70,7 +70,7 @@ int vx_dev_init(callbacks_t* callbacks) {
   callbacks->mem_free = [](vx_device_h hdevice, uint64_t addr) {
     if (0 == addr)
       return 0;
-    DBGPRINT("MEM_FREE: addr=%p\n", addr);
+    DBGPRINT("MEM_FREE: addr=%lx\n", addr);
     auto device = ((vt_device*)hdevice);
     int err = device->mem_free(addr);
     return err;
@@ -98,7 +98,7 @@ int vx_dev_init(callbacks_t* callbacks) {
     if (nullptr == host_ptr)
       return -1;
     auto device = ((vt_device*)hdevice);
-    DBGPRINT("COPY_TO_DEV: addr=%p, host_addr=%p, size=%ld\n", addr, host_ptr, size);
+    DBGPRINT("COPY_TO_DEV: addr=%lx, host_addr=%p, size=%ld\n", addr, host_ptr, size);
     return device->upload(addr, host_ptr, size);
     };
 
@@ -106,14 +106,14 @@ int vx_dev_init(callbacks_t* callbacks) {
     if (nullptr == host_ptr)
       return -1;
     auto device = ((vt_device*)hdevice);
-    DBGPRINT("COPY_FROM_DEV: addr=%p, host_addr=%p, size=%ld\n", addr, host_ptr, size);
+    DBGPRINT("COPY_FROM_DEV: addr=%lx, host_addr=%p, size=%ld\n", addr, host_ptr, size);
     return device->download(host_ptr, addr, size);
     };
 
   callbacks->start = [](vx_device_h hdevice, metadata_buffer_t& metadata, uint64_t csr_knl_addr) {
     if (nullptr == hdevice)
       return -1;
-    DBGPRINT("START: hdevice=%p, knl_entry=%p, knl_args=%p\n", hdevice, metadata.knl_entry, metadata.knl_arg_base);
+    DBGPRINT("START: hdevice=%p, knl_entry=%x, knl_args=%x\n", hdevice, metadata.knl_entry, metadata.knl_arg_base);
     auto device = ((vt_device*)hdevice);
     return device->start(metadata, csr_knl_addr);
     };

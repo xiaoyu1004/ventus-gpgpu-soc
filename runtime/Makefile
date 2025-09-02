@@ -16,11 +16,11 @@ LDFLAGS += -L$(RTL_SIM_DIR) -lrtlsim
 SRCS := $(SRC_DIR)/ventus_runtime.cpp $(SRC_DIR)/callbacks.cpp
 
 # Debugging
-ifdef DEBUG
-	CXXFLAGS += -g -O0
-else
-	CXXFLAGS += -DNDEBUG
-endif
+# ifdef DEBUG
+# 	CXXFLAGS += -g -O0
+# else
+# 	CXXFLAGS += -DNDEBUG
+# endif
 
 PROJECT := libventusrt.so
 

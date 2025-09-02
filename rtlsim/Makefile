@@ -26,7 +26,7 @@ VL_FLAGS += -DXLEN_$(XLEN)
 VL_FLAGS += $(RTL_INCLUDE)
 VL_FLAGS += $(RTL_PKGS)
 VL_FLAGS += --cc $(TOP) --top-module $(TOP)
-VL_FLAGS += --trace --trace-structs -DFST_OUTPUT
+VL_FLAGS += --trace-fst --trace-structs -DFST_OUTPUT
 VL_FLAGS += -timescale 1ns/1ps
 # warning
 VL_FLAGS += -Wno-WIDTHEXPAND
@@ -42,7 +42,7 @@ RTL_SRCS := $(shell find $(RTL_DIRS) -type f \( -name '*.v' -o -name '*.vh' -o -
 
 # Enable Verilator multithreaded simulation
 THREADS ?= $(shell python3 -c 'import multiprocessing as mp; print(mp.cpu_count())')
-VL_FLAGS += -j 2
+VL_FLAGS += -j 4
 
 PROJECT := rtlsim
 

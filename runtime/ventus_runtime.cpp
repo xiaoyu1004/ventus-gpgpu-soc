@@ -147,5 +147,8 @@ int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr) {
     return err;
     });
 
+    uint8_t inst = *reinterpret_cast<uint8_t*>(content.data());
+  printf("---- inst 0: %x\n", inst);
+
   return 0;
 }

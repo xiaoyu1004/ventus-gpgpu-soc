@@ -24,7 +24,7 @@ kernel: $(PROJECT).elf $(PROJECT).ll $(PROJECT).s $(PROJECT).bin $(PROJECT).dump
 all: $(PROJECT)
 
 $(PROJECT).dump.s: $(PROJECT).elf
-	$(DP) -D --mattr=+v,+zfinx $< > $@
+	$(DP) -d --mattr=+v,+zfinx $< > $@
 
 $(PROJECT).bin: $(PROJECT).elf
 	$(CP) -O binary $< $@

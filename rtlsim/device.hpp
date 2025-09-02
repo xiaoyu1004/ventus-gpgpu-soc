@@ -11,28 +11,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vt_config.h>
-#include <processor.h>
 #include <memory.h>
+#include <processor.h>
 #include <ventus_runtime.h>
+#include <vt_config.h>
 
+#include <assert.h>
+#include <chrono>
+#include <future>
+#include <iostream>
+#include <list>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <iostream>
-#include <future>
-#include <list>
-#include <chrono>
 #include <unordered_map>
 
 class vt_device {
 public:
-  vt_device()
-    : ram_()
-  {
-    processor_.attach_ram(&ram_);
-  }
+  vt_device() : ram_() { processor_.attach_ram(&ram_); }
 
   ~vt_device() {
     if (future_.valid()) {
@@ -40,11 +36,9 @@ public:
     }
   }
 
-  int init() {
-    return 0;
-  }
+  int init() { return 0; }
 
-  int get_caps(uint32_t caps_id, uint64_t* value) {
+  int get_caps(uint32_t caps_id, uint64_t *value) {
     uint64_t _value;
     // switch (caps_id) {
     // case VX_CAPS_VERSION:
@@ -69,8 +63,8 @@ public:
     //   _value = (1 << LMEM_LOG_SIZE);
     //   break;
     // case VX_CAPS_ISA_FLAGS:
-    //   _value = ((uint64_t(MISA_EXT))<<32) | ((log2floor(XLEN)-4) << 30) | MISA_STD;
-    //   break;
+    //   _value = ((uint64_t(MISA_EXT))<<32) | ((log2floor(XLEN)-4) << 30) |
+    //   MISA_STD; break;
     // case VX_CAPS_NUM_MEM_BANKS:
     //   _value = PLATFORM_MEMORY_NUM_BANKS;
     //   break;
@@ -86,19 +80,15 @@ public:
     return 0;
   }
 
-  int mem_alloc(uint64_t* dev_addr, uint64_t size) {
+  int mem_alloc(uint64_t *dev_addr, uint64_t size) {
     return ram_.alloc(dev_addr, size) ? 0 : -1;
   }
 
-  int mem_free(uint64_t dev_addr) {
-    return ram_.free(dev_addr);
-  }
+  int mem_free(uint64_t dev_addr) { return ram_.free(dev_addr); }
 
-  int mem_info(uint64_t* mem_free, uint64_t* mem_used) const {
-    return 0;
-  }
+  int mem_info(uint64_t *mem_free, uint64_t *mem_used) const { return 0; }
 
-  int upload(uint64_t dest_addr, const void* src, uint64_t size) {
+  int upload(uint64_t dest_addr, const void *src, uint64_t size) {
     if (dest_addr + size > GLOBAL_MEM_SIZE)
       return -1;
 
@@ -106,7 +96,7 @@ public:
     return 0;
   }
 
-  int download(void* dest, uint64_t src_addr, uint64_t size) {
+  int download(void *dest, uint64_t src_addr, uint64_t size) {
     if (src_addr + size > GLOBAL_MEM_SIZE)
       return -1;
 
@@ -114,18 +104,16 @@ public:
     return 0;
   }
 
-  int start(metadata_buffer_t& metadata, uint64_t csr_knl_addr) {
+  int start(metadata_buffer_t metadata, uint64_t csr_knl_addr) {
     // ensure prior run completed
     if (future_.valid()) {
       future_.wait();
     }
 
-    // set kernel info
-
     // start new run
-    future_ = std::async(std::launch::async, [&] {
+    future_ = std::async(std::launch::async, [metadata, csr_knl_addr, this] {
       processor_.run(metadata, csr_knl_addr);
-      });
+    });
 
     return 0;
   }
@@ -147,7 +135,7 @@ public:
   }
 
 private:
-  PhysicalMemory      ram_;
-  Processor           processor_;
-  std::future<void>   future_;
+  PhysicalMemory ram_;
+  Processor processor_;
+  std::future<void> future_;
 };

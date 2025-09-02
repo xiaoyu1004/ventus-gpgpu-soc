@@ -15,22 +15,24 @@
 #include "Vgpgpu_top_wrapper.h"
 #include "memory.h"
 
+#define FST_OUTPUT
+
 #ifdef FST_OUTPUT
 #include <verilated_fst_c.h>
 #endif
 
-#include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 
-#include <ostream>
 #include <list>
-#include <queue>
-#include <vector>
-#include <sstream>
-#include <unordered_map>
 #include <map>
+#include <ostream>
+#include <queue>
+#include <sstream>
 #include <tuple>
+#include <unordered_map>
+#include <vector>
 
 #ifndef MEM_CLOCK_RATIO
 #define MEM_CLOCK_RATIO 1
@@ -59,9 +61,7 @@
 
 static uint64_t timestamp = 0;
 
-double sc_time_stamp() {
-  return timestamp;
-}
+double sc_time_stamp() { return timestamp; }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -70,15 +70,12 @@ static uint64_t trace_start_time = TRACE_START_TIME;
 static uint64_t trace_stop_time = TRACE_STOP_TIME;
 
 bool sim_trace_enabled() {
-  if (timestamp >= trace_start_time
-    && timestamp < trace_stop_time)
+  if (timestamp >= trace_start_time && timestamp < trace_stop_time)
     return true;
   return trace_enabled;
 }
 
-void sim_trace_enable(bool enable) {
-  trace_enabled = enable;
-}
+void sim_trace_enable(bool enable) { trace_enabled = enable; }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -124,14 +121,12 @@ public:
     delete info_;
   }
 
-  void attach_ram(PhysicalMemory* ram) {
-    ram_ = ram;
-  }
+  void attach_ram(PhysicalMemory *ram) { ram_ = ram; }
 
-  void run(metadata_buffer_t& metadata, uint64_t csr_knl_addr) {
+  void run(metadata_buffer_t metadata, uint64_t csr_knl_addr) {
     parse_metadata(metadata, csr_knl_addr);
 #ifndef NDEBUG
-    std::cout << std::dec << timestamp << ": [sim] run()" << std::endl;
+    INFO("%lx: [sim] run() ", timestamp);
 #endif
 
     // reset device
@@ -145,6 +140,7 @@ public:
     while (!grid_finish_) {
       this->tick();
       cycles_++;
+      INFO("cycles_: %lu", cycles_);
     }
 
     // stop
@@ -152,17 +148,32 @@ public:
   }
 
 private:
-  void parse_metadata(metadata_buffer_t& metadata, uint64_t csr_knl_addr) {
-    info_->dim_grid.x = metadata.knl_gl_offset_x / metadata.knl_lc_size_x;
-    info_->dim_grid.y = metadata.knl_gl_offset_y / metadata.knl_lc_size_y;
-    info_->dim_grid.z = metadata.knl_gl_offset_z / metadata.knl_lc_size_z;
+  void parse_metadata(metadata_buffer_t metadata, uint64_t csr_knl_addr) {
+    info_->dim_grid.x = metadata.knl_gl_size_x / metadata.knl_lc_size_x;
+    info_->dim_grid.y = metadata.knl_gl_size_y / metadata.knl_lc_size_y;
+    info_->dim_grid.z = metadata.knl_gl_size_z / metadata.knl_lc_size_z;
+
+#ifndef NDEBUG
+    INFO("metadata.knl_gl_size_x:%u", metadata.knl_gl_size_x);
+    INFO("metadata.knl_gl_size_y:%u", metadata.knl_gl_size_y);
+    INFO("metadata.knl_gl_size_z:%u", metadata.knl_gl_size_z);
+
+    INFO("metadata.knl_lc_size_x:%u", metadata.knl_lc_size_x);
+    INFO("metadata.knl_lc_size_y:%u", metadata.knl_lc_size_y);
+    INFO("metadata.knl_lc_size_z:%u", metadata.knl_lc_size_z);
+
+    uint32_t knl_entry;
+    ram_->read(csr_knl_addr, &knl_entry, 4);
+    INFO("csr_knl_addr:%x, knl_entry:%x", (uint32_t)csr_knl_addr, knl_entry);
+#endif
 
     info_->grid_idx.x = 0; // kernel_size_x
     info_->grid_idx.y = 0; // kernel_size_y
     info_->grid_idx.z = 0; // kernel_size_z
 
     info_->wg_id = 0;
-    info_->num_warps = (metadata.knl_lc_size_x / WARP_SIZE) * metadata.knl_lc_size_y * metadata.knl_lc_size_z;
+    info_->num_warps = (metadata.knl_lc_size_x / WARP_SIZE) *
+                       metadata.knl_lc_size_y * metadata.knl_lc_size_z;
     info_->warp_size = WARP_SIZE;
     info_->start_pc = 0x80000000U;
 
@@ -195,13 +206,15 @@ private:
   void handle_host() {
     // rsp
     if (device_->host_rsp_valid_o && device_->host_rsp_ready_i) {
-      uint32_t sm_idx = device_->host_rsp_inflight_wg_buffer_host_wf_done_wg_id_o && 0x1;
+      uint32_t sm_idx =
+          device_->host_rsp_inflight_wg_buffer_host_wf_done_wg_id_o && 0x1;
       wg_finish_count_++;
       active_sms_[sm_idx] = false;
-      INFO("wg finish count: :%u\n", wg_finish_count_);
+      INFO("wg finish count: :%u", wg_finish_count_);
     }
 
-    uint32_t wg_num_totals = info_->dim_grid.x * info_->dim_grid.y * info_->dim_grid.z;
+    uint32_t wg_num_totals =
+        info_->dim_grid.x * info_->dim_grid.y * info_->dim_grid.z;
     if (wg_finish_count_ == wg_num_totals) {
       grid_finish_ = true;
       return;
@@ -212,6 +225,9 @@ private:
       device_->host_req_valid_i = 0;
       uint32_t sm_idx = device_->host_req_wg_id_i;
       active_sms_[sm_idx] = true;
+      INFO("dispatch cta: x:%u y:%u z:%u", info_->grid_idx.x, info_->grid_idx.y,
+           info_->grid_idx.z);
+
       info_->grid_idx.x++;
       if (info_->grid_idx.x == info_->dim_grid.x) {
         info_->grid_idx.x = 0;
@@ -221,7 +237,6 @@ private:
           info_->grid_idx.z++;
         }
       }
-      INFO("dispatch cta: x:%u y:%u z:%u\n", info_->grid_idx.x, info_->grid_idx.y, info_->grid_idx.z);
       return;
     }
 
@@ -261,17 +276,22 @@ private:
       device_->out_d_source_i = device_->out_a_source_o;
       ram_->read(device_->out_a_address_o, &device_->out_d_data_i, 8);
       device_->out_d_param_i = device_->out_a_param_o;
-    }
-    else if (device_->out_a_valid_o && device_->out_a_ready_i && write) {
+      INFO("memory read; addr:%x size:%d", device_->out_a_address_o,
+           (int)std::pow(2, device_->out_a_size_o));
+    } else if (device_->out_a_valid_o && device_->out_a_ready_i && write) {
       device_->out_d_valid_i = 1;
       device_->out_d_opcode_i = 0;
       device_->out_d_size_i = device_->out_a_size_o;
       device_->out_d_source_i = device_->out_a_source_o;
       device_->out_d_param_i = device_->out_a_param_o;
-      if (device_->out_a_mask_o != 255u) {
-        FATAL("mask error: 0x%x\n", device_->out_a_mask_o);
+      for (uint32_t i = 0; i < 8; ++i) {
+        if (device_->out_a_mask_o & (1u << i)) {
+          uint8_t val = (device_->out_a_data_o >> (i * 8)) & 0xFF;
+          ram_->write(device_->out_a_address_o + i, &val, 1);
+        }
       }
-      ram_->write(device_->out_a_address_o, &device_->out_a_data_o, std::pow(2, device_->out_a_size_o));
+      INFO("memory write; addr:%x mask:%x size:%d", device_->out_a_address_o,
+           device_->out_a_mask_o, (int)std::pow(2, device_->out_a_size_o));
     }
   }
 
@@ -315,36 +335,29 @@ private:
 
   // std::list<mem_req_t*> pending_mem_reqs_;
 
-  Vgpgpu_top_wrapper* device_;
+  Vgpgpu_top_wrapper *device_;
 
-  PhysicalMemory* ram_;
+  PhysicalMemory *ram_;
   bool grid_finish_;
   uint32_t wg_finish_count_;
   uint64_t cycles_;
   bool active_sms_[NUMBER_CU];
 
-  dispatch_info_t* info_;
+  dispatch_info_t *info_;
 
 #ifdef FST_OUTPUT
-  VerilatedFstC* tfp_;
+  VerilatedFstC *tfp_;
 #endif
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Processor::Processor()
-  : impl_(new Impl())
-{
-}
+Processor::Processor() : impl_(new Impl()) {}
 
-Processor::~Processor() {
-  delete impl_;
-}
+Processor::~Processor() { delete impl_; }
 
-void Processor::attach_ram(PhysicalMemory* mem) {
-  impl_->attach_ram(mem);
-}
+void Processor::attach_ram(PhysicalMemory *mem) { impl_->attach_ram(mem); }
 
-void Processor::run(metadata_buffer_t& metadata, uint64_t csr_knl_addr) {
+void Processor::run(metadata_buffer_t metadata, uint64_t csr_knl_addr) {
   impl_->run(metadata, csr_knl_addr);
 }
