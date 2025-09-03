@@ -2,7 +2,7 @@
 
 `define NUM_CLUSTER 1 //the number of cluster
 
-`define NUM_SM 2 //the number of sm
+`define NUM_SM 1 //the number of sm
 
 `define NUM_SM_IN_CLUSTER `NUM_SM/`NUM_CLUSTER //the number of sm in a cluster
 
@@ -106,7 +106,7 @@
 
 `define NUM_CACHE_DEPTH $clog2(`NUM_CACHE_IN_SM)
 
-`define NUM_CLUSTER_DEPTH $clog2(`NUM_SM_IN_CLUSTER)
+`define NUM_CLUSTER_DEPTH ((`NUM_SM_IN_CLUSTER == 1) ? 1 : $clog2(`NUM_SM_IN_CLUSTER))
 
 `define D_SOURCE (`NUM_CACHE_DEPTH+3+`DCACHE_ENTRY_DEPTH+`DCACHE_SETIDXBITS)
 
@@ -332,11 +332,11 @@
 
 `define PARAM_BITS 3   //3+lg2(4)+lg2(32）+lg2(2) + 0+1 = 3+2+5+1 +1 =12
 
-`define SOURCE_BITS (3 + $clog2(`DCACHE_MSHRENTRY) + $clog2(`DCACHE_NSETS) + $clog2(`L2CACHE_NUM_SM_IN_CLUSTER) + $clog2(`L2CACHE_NUM_CLUSTER) + 1)
+`define SOURCE_BITS (3 + $clog2(`DCACHE_MSHRENTRY) + $clog2(`DCACHE_NSETS) + ((`L2CACHE_NUM_SM_IN_CLUSTER == 1) ? 1 : $clog2(`L2CACHE_NUM_SM_IN_CLUSTER)) + $clog2(`L2CACHE_NUM_CLUSTER) + 1)
 
-`define URCE_S_BITS (3 + $clog2(`DCACHE_MSHRENTRY) + $clog2(`DCACHE_NSETS) + $clog2(`L2CACHE_NUM_SM_IN_CLUSTER) + $clog2(`NUM_CACHE_IN_SM) + 1)
+`define URCE_S_BITS (3 + $clog2(`DCACHE_MSHRENTRY) + $clog2(`DCACHE_NSETS) + ((`L2CACHE_NUM_SM_IN_CLUSTER == 1) ? 1 : $clog2(`L2CACHE_NUM_SM_IN_CLUSTER)) + $clog2(`NUM_CACHE_IN_SM) + 1)
 
-`define URCE_L_BITS (3 + $clog2(`DCACHE_MSHRENTRY) + $clog2(`DCACHE_NSETS) + $clog2(`L2CACHE_NUM_SM_IN_CLUSTER) + $clog2(`NUM_CACHE_IN_SM) + $clog2(`NUM_CLUSTER) + 1)
+`define URCE_L_BITS (3 + $clog2(`DCACHE_MSHRENTRY) + $clog2(`DCACHE_NSETS) + ((`L2CACHE_NUM_SM_IN_CLUSTER == 1) ? 1 : $clog2(`L2CACHE_NUM_SM_IN_CLUSTER)) + $clog2(`NUM_CACHE_IN_SM) + $clog2(`NUM_CLUSTER) + 1)
 
 `define DATA_BITS (`L2CACHE_BEATBYTES * 8)
 

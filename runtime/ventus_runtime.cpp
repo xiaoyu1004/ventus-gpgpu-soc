@@ -12,6 +12,7 @@
 // limitations under the License.
 
 #include "callbacks.h"
+#include "memory.h"
 #include "ventus_runtime.h"
 
 #include <unistd.h>
@@ -96,6 +97,8 @@ int vx_start(vx_device_h hdevice, dim3 grid, dim3 block, uint64_t knl_entry, uin
     return err;
     });
 
+  INFO("metadata dev addr: %lx, size: %u", g_csr_knl_addr, metadata_size);
+
   return (g_callbacks.start)(hdevice, metadata, g_csr_knl_addr);
 }
 
@@ -147,8 +150,7 @@ int vx_upload_file(vx_device_h hdevice, const char* filename, uint64_t* addr) {
     return err;
     });
 
-    uint8_t inst = *reinterpret_cast<uint8_t*>(content.data());
-  printf("---- inst 0: %x\n", inst);
+  // uint8_t inst = *reinterpret_cast<uint8_t*>(content.data());
 
   return 0;
 }

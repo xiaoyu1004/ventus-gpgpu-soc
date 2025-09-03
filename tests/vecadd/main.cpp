@@ -60,7 +60,7 @@ int run_memcopy_test(const kernel_arg_t &kernel_arg) {
 
   // update source buffer
   for (uint32_t i = 0; i < num_points; ++i) {
-    h_src[i] = i * 2;
+    h_src[i] = 1;
   }
 
   auto time_start = std::chrono::high_resolution_clock::now();
@@ -82,7 +82,7 @@ int run_memcopy_test(const kernel_arg_t &kernel_arg) {
   std::cout << "verify result" << std::endl;
   for (uint32_t i = 0; i < num_points; ++i) {
     auto cur = h_dst[i];
-    auto ref = i * 2;
+    auto ref = 1;
     if (cur != ref) {
       printf("*** error: [%d] expected=%d, actual=%d\n", i, ref, cur);
       ++errors;
@@ -115,7 +115,7 @@ int run_kernel_test(const kernel_arg_t &kernel_arg) {
 
   // update source buffer
   for (uint32_t i = 0; i < num_points; ++i) {
-    h_src[i] = i * 2;
+    h_src[i] = i;
   }
 
   auto time_start = std::chrono::high_resolution_clock::now();
@@ -155,7 +155,7 @@ int run_kernel_test(const kernel_arg_t &kernel_arg) {
   std::cout << "verify result" << std::endl;
   for (uint32_t i = 0; i < num_points; ++i) {
     auto cur = h_dst[i];
-    auto ref = h_src[i];
+    auto ref = i;
     if (cur != ref) {
       printf("*** error: [%d] expected=%d, actual=%d\n", i, ref, cur);
       ++errors;

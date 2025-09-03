@@ -56,8 +56,7 @@
 
 #define PLATFORM_MEMORY_DATA_SIZE 8
 #define WARP_SIZE 32
-#define NUMBER_WG_SLOTS 8
-#define NUMBER_CU 2
+#define NUMBER_CU 1
 
 static uint64_t timestamp = 0;
 
@@ -101,8 +100,7 @@ public:
 #endif
 
     ram_ = nullptr;
-    active_sms_[0] = false;
-    active_sms_[1] = false;
+    active_sms_ = false;
 
     // reset the device
     this->reset();
@@ -141,6 +139,11 @@ public:
       this->tick();
       cycles_++;
       INFO("cycles_: %lu", cycles_);
+
+      // TODO
+      if (cycles_ > 3000) {
+        break;
+      }
     }
 
     // stop
@@ -206,10 +209,8 @@ private:
   void handle_host() {
     // rsp
     if (device_->host_rsp_valid_o && device_->host_rsp_ready_i) {
-      uint32_t sm_idx =
-          device_->host_rsp_inflight_wg_buffer_host_wf_done_wg_id_o && 0x1;
       wg_finish_count_++;
-      active_sms_[sm_idx] = false;
+      active_sms_ = false;
       INFO("wg finish count: :%u", wg_finish_count_);
     }
 
@@ -224,7 +225,7 @@ private:
     if (device_->host_req_valid_i && device_->host_req_ready_o) {
       device_->host_req_valid_i = 0;
       uint32_t sm_idx = device_->host_req_wg_id_i;
-      active_sms_[sm_idx] = true;
+      active_sms_ = true;
       INFO("dispatch cta: x:%u y:%u z:%u", info_->grid_idx.x, info_->grid_idx.y,
            info_->grid_idx.z);
 
@@ -241,9 +242,9 @@ private:
     }
 
     bool host_dispatch_finish = info_->grid_idx.z >= info_->dim_grid.z;
-    bool dispatch_valid = !active_sms_[0] || !active_sms_[1];
+    bool dispatch_valid = !active_sms_;
     if (!host_dispatch_finish && dispatch_valid && !device_->host_req_valid_i) {
-      uint32_t sm_idx = !active_sms_[0] ? 0 : 1;
+      uint32_t sm_idx = 0;
       device_->host_req_valid_i = 1;
       device_->host_req_wg_id_i = sm_idx;
       device_->host_req_num_wf_i = info_->num_warps;
@@ -271,15 +272,17 @@ private:
     // read
     if (device_->out_a_valid_o && device_->out_a_ready_i && read) {
       device_->out_d_valid_i = 1;
+      device_->out_a_ready_i = 0;
       device_->out_d_opcode_i = 1;
       device_->out_d_size_i = device_->out_a_size_o;
       device_->out_d_source_i = device_->out_a_source_o;
       ram_->read(device_->out_a_address_o, &device_->out_d_data_i, 8);
       device_->out_d_param_i = device_->out_a_param_o;
-      INFO("memory read; addr:%x size:%d", device_->out_a_address_o,
-           (int)std::pow(2, device_->out_a_size_o));
+      INFO("memory read; addr:%x size:%d data: %lx", device_->out_a_address_o,
+           device_->out_a_size_o, device_->out_d_data_i);
     } else if (device_->out_a_valid_o && device_->out_a_ready_i && write) {
       device_->out_d_valid_i = 1;
+      device_->out_a_ready_i = 0;
       device_->out_d_opcode_i = 0;
       device_->out_d_size_i = device_->out_a_size_o;
       device_->out_d_source_i = device_->out_a_source_o;
@@ -290,8 +293,12 @@ private:
           ram_->write(device_->out_a_address_o + i, &val, 1);
         }
       }
-      INFO("memory write; addr:%x mask:%x size:%d", device_->out_a_address_o,
-           device_->out_a_mask_o, (int)std::pow(2, device_->out_a_size_o));
+      INFO("memory write; addr:%x mask:%x size:%d data: %lx",
+           device_->out_a_address_o, device_->out_a_mask_o,
+           (int)std::pow(2, device_->out_a_size_o), device_->out_a_data_o);
+    } else if (device_->out_d_valid_i && device_->out_d_ready_o) {
+      device_->out_d_valid_i = 0;
+      device_->out_a_ready_i = 1;
     }
   }
 
@@ -341,7 +348,7 @@ private:
   bool grid_finish_;
   uint32_t wg_finish_count_;
   uint64_t cycles_;
-  bool active_sms_[NUMBER_CU];
+  bool active_sms_;
 
   dispatch_info_t *info_;
 
