@@ -26,7 +26,7 @@ typedef struct {
   uint32_t dst_addr;
 } kernel_arg_t;
 
-const char *kernel_file = "vecadd.asm.bin";
+const char *kernel_file = "vecadd.bin";
 int test = 1;
 
 vx_device_h device = nullptr;
@@ -133,14 +133,14 @@ int run_kernel_test(const kernel_arg_t &kernel_arg) {
   // start device
   std::cout << "start execution" << std::endl;
   auto t2 = std::chrono::high_resolution_clock::now();
-  dim3 grid(num_points / 32, 1, 1);
-  dim3 block(32, 1, 1);
+  dim3 grid(num_points / 128, 1, 1);
+  dim3 block(128, 1, 1);
   std::cout << std::dec << "grid.x:" << grid.x << ", grid.y:" << grid.y
             << ", grid.z:" << grid.z << std::endl;
   std::cout << std::dec << "block.x:" << block.x << ", block.y:" << block.y
             << ", block.z:" << block.z << std::endl;
 
-  RT_CHECK(vx_start(device, grid, block, 0x80000130u, knl_arg_base));
+  RT_CHECK(vx_start(device, grid, block, 0x800001e8u, knl_arg_base));
   RT_CHECK(vx_ready_wait(device, VX_MAX_TIMEOUT));
   auto t3 = std::chrono::high_resolution_clock::now();
 
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
   // uint64_t num_cores;
   // RT_CHECK(vx_dev_caps(device, VX_CAPS_NUM_CORES, &num_cores));
 
-  uint32_t num_points = 32;
+  uint32_t num_points = 128;
   uint32_t buf_size = num_points * sizeof(int32_t);
 
   std::cout << "number of points: " << num_points << std::endl;

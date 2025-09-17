@@ -1,8 +1,9 @@
 kernel void
-vecadd (__global const float *a,
-	__global const float *b,
-	__global float *c)
+vecadd (__global const int *src,
+	__global int *dst)
 {
   int gid = get_global_id(0);
-  c[gid] = a[gid] + b[gid];
+//   int num_warps = get_num_sub_groups(0);
+  dst[gid] = gid;
+//   c[gid] = a[gid] + b[gid];
 }

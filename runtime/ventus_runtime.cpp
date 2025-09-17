@@ -74,7 +74,7 @@ int vx_start(vx_device_h hdevice, dim3 grid, dim3 block, uint64_t knl_entry, uin
   metadata_buffer_t metadata;
   metadata.knl_entry = (uint32_t)knl_entry;
   metadata.knl_arg_base = (uint32_t)knl_arg_base;
-  metadata.knl_work_dim = 0;
+  metadata.knl_work_dim = 1;
   metadata.knl_gl_size_x = grid.x * block.x;
   metadata.knl_gl_size_y = grid.y * block.y;
   metadata.knl_gl_size_z = grid.z * block.z;

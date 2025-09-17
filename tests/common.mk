@@ -12,22 +12,30 @@ DP  = $(LLVM_VENTUS)/bin/llvm-objdump
 CP  = $(LLVM_VENTUS)/bin/llvm-objcopy
 llc = $(LLVM_VENTUS)/bin/llc
 
-CFLAGS += -O3 -cl-std=CL2.0 -target riscv32 -mcpu=ventus-gpgpu -nodefaultlibs
-CFLAGS += -I$(RUNTIME_DIR) -I$(LLVM_VENTUS)/include -I$(LLVM_VENTUS)/libclc/generic/include
-CFLAGS += -DNDEBUG $(LLVM_VENTUS)/../libclc/riscv32/lib/workitem/get_global_id.cl
+CL_SRCS += $(LLVM_VENTUS)/../libclc/riscv32/lib/workitem/get_global_id.cl
+CL_SRCS += $(LLVM_VENTUS)/../libclc/riscv32/lib/workitem/get_num_groups.cl
+CL_SRCS += $(LLVM_VENTUS)/../libclc/riscv32/lib/workitem/get_num_sub_groups.cl
 
-LIBC_LIB += -L$(LLVM_VENTUS)/lib $(LLVM_VENTUS)/lib/crt0.o -lworkitem
+CFLAGS += -O3 -cl-std=CL2.0 -target riscv32 -mcpu=ventus-gpgpu -nodefaultlibs
+CFLAGS += -I$(RUNTIME_DIR) -I$(LLVM_VENTUS)/include -I$(LLVM_VENTUS)/libclc/generic/include -I$(LLVM_VENTUS)/../libclc/riscv32/lib
+CFLAGS += -DNDEBUG $(CL_SRCS)
+
+# LIBC_LIB += -L$(LLVM_VENTUS)/lib $(LLVM_VENTUS)/lib/crt0.o -lworkitem
+LIBC_LIB += -L$(LLVM_VENTUS)/lib -lworkitem
 
 LDFLAGS += -Wl,-T,$(LLVM_VENTUS)/../utils/ldscripts/ventus/elf32lriscv.ld $(LIBC_LIB)
 
-kernel: $(PROJECT).elf $(PROJECT).ll $(PROJECT).s $(PROJECT).bin $(PROJECT).dump.s
+kernel: $(PROJECT).elf $(PROJECT).ll $(PROJECT).s $(PROJECT).bin $(PROJECT).hex $(PROJECT).dump.s
 all: $(PROJECT)
 
 $(PROJECT).dump.s: $(PROJECT).elf
 	$(DP) -d --mattr=+v,+zfinx $< > $@
 
+$(PROJECT).hex: $(PROJECT).bin
+	od -An -tx4 -w4 -v --endian=little $< > $@
+
 $(PROJECT).bin: $(PROJECT).elf
-	$(CP) -O binary $< $@
+	$(CP) -j .text -O binary $< $@
 
 $(PROJECT).elf: $(KNL_SRCS)
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
@@ -45,4 +53,4 @@ verdi:
 	verdi -f ../file_list.f -ssf ./trace.vcd.fsdb &
 
 clean:
-	rm -rf *.elf *.bin *.dump.s *.log .depend $(PROJECT) *.ll *.s
+	rm -rf *.elf *.bin *.hex *.dump.s *.log .depend $(PROJECT) *.ll *.s

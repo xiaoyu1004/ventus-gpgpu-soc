@@ -52,27 +52,27 @@ _start:
   mul t5, t5, t3
   add s0, t2, t5        # s0 points to local memory base addr in a workgroup
 
-  # clear BSS segment
-  la      a0, _edata
-  la      a2, _end
-  beq     a0, a2, 2f
-1:
-  sw      zero, (a0)
-  addi    a0, a0, 4
-  bltu    a0, a2, 1b
+#   # clear BSS segment
+#   la      a0, _edata
+#   la      a2, _end
+#   beq     a0, a2, 2f
+# 1:
+#   sw      zero, (a0)
+#   addi    a0, a0, 4
+#   bltu    a0, a2, 1b
 
 2:
   csrr t0, CSR_KNL	                 # get addr of kernel metadata
   lw t1, KNL_ENTRY(t0)               # get kernel program address
   lw a0, KNL_ARG_BASE(t0)            # get kernel arg buffer base address
-  lw t2, KNL_PRINT_ADDR(t0)          # get kernel print buffer address
-  lw t3, KNL_PRINT_SIZE(t0)          # get kernel print buffer size
-  la t4, BUFFER_ADDR
-  la t5, BUFFER_SIZE
-  sw t2, 0(t4)
-  sw t3, 0(t5)
-  la t6, spike_end                   # exception to stop spike
-  csrw mtvec, t6
+#   lw t2, KNL_PRINT_ADDR(t0)          # get kernel print buffer address
+#   lw t3, KNL_PRINT_SIZE(t0)          # get kernel print buffer size
+#   la t4, BUFFER_ADDR
+#   la t5, BUFFER_SIZE
+#   sw t2, 0(t4)
+#   sw t3, 0(t5)
+#   la t6, spike_end                   # exception to stop spike
+#   csrw mtvec, t6
   jalr t1                            # call kernel program
 
   # call exit routine
