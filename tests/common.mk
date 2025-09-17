@@ -42,7 +42,7 @@ $(PROJECT).s: $(PROJECT).ll
 	$(CC) $(CFLAGS) -MM $^ > .depend;
 
 verdi:
-	verdi -f ../file_list.f -ssf ./trace.fsdb &
+	verdi -f ../file_list.f -ssf ./trace.vcd.fsdb &
 
 clean:
 	rm -rf *.elf *.bin *.dump.s *.log .depend $(PROJECT) *.ll *.s

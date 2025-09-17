@@ -69,7 +69,7 @@
 ../../ventusgpgpu/gpgpu_top/sm/l1cache/icache/tag_access_icache.v
 ../../ventusgpgpu/gpgpu_top/sm/l1cache/icache/tag_checker_icache.v
 ../../ventusgpgpu/gpgpu_top/sm/l1cache/shared_memory/bankconflict_arb.v
-../../ventusgpgpu/gpgpu_top/sm/l1cache/shared_memory/sharemem.v
+../../ventusgpgpu/gpgpu_top/sm/l1cache/shared_memory/shared_mem.v
 ../../ventusgpgpu/gpgpu_top/sm/cta2warp.v
 ../../ventusgpgpu/gpgpu_top/sm/pipeline/csr/csrexe.v
 ../../ventusgpgpu/gpgpu_top/sm/pipeline/csr/csrfile.v

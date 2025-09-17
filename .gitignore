@@ -7,3 +7,6 @@ librtlsim.so.obj_dir
 *ll
 *.s
 *.elf
+csrc
+simv.daidir
+*.log

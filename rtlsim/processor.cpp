@@ -284,9 +284,9 @@ private:
       device_->out_d_valid_i = 1;
       device_->out_a_ready_i = 0;
       device_->out_d_opcode_i = 0;
-      device_->out_d_size_i = device_->out_a_size_o;
+      // device_->out_d_size_i = device_->out_a_size_o;
       device_->out_d_source_i = device_->out_a_source_o;
-      device_->out_d_param_i = device_->out_a_param_o;
+      // device_->out_d_param_i = device_->out_a_param_o;
       for (uint32_t i = 0; i < 8; ++i) {
         if (device_->out_a_mask_o & (1u << i)) {
           uint8_t val = (device_->out_a_data_o >> (i * 8)) & 0xFF;
