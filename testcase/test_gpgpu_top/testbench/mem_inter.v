@@ -148,54 +148,128 @@ module mem_inter(
     // Task: Tile Read/Write Handling (Respond to L2 cache requests)
     //-------------------------------------------------------------------------
     task tile_read_and_write;
-        input [CLOG_L2CAC_N-1:0] bus_n;  // Target bus number (maps to L2 instance)
+        input [CLOG_L2CAC_N-1:0] bus_n;  // Target bus number (maps to specific L2 instance)
     begin
-        @(posedge clk);  // Synchronize to clock rising edge
+        // State variable: Tracks if a request is being processed (prevents duplicate requests)
+        reg in_progress;
+        // Delay counter: Tracks wait cycles for read/write operations
+        reg [7:0] delay_cnt;
+        // Operation type identifier: 0=idle, 1=read, 2=write
+        reg [1:0] op_type;
         
-        // 1. Assert ready to receive request from target L2
-        out_a_ready_r[bus_n] = 1'b1;
+        // Request parameter registers: Store request details during delay period
+        reg [`ADDRESS_BITS-1:0]  req_addr;    // Stored address from request
+        reg [`DATA_BITS-1:0]  req_data;    // Stored data from write request
+        reg [`MASK_BITS-1:0]  req_mask;    // Stored mask from write request
+        reg [`OP_BITS-1:0]     req_opcode;  // Stored operation code
+        reg [`SIZE_BITS-1:0]   req_size;    // Stored transfer size
+        reg [`SOURCE_BITS-1:0] req_source;  // Stored source identifier
+        reg [2:0]              req_param;   // Stored additional parameters
 
-        // 2. Handle read request (opcode = 4)
-        if (out_a_valid_o[bus_n] & out_a_ready_i[bus_n] & 
-            (out_a_opcode_o[(bus_n*`OP_BITS)+:`OP_BITS] == 4)) begin
-            
-            out_a_ready_r[bus_n] = 1'b0;  // Deassert ready to avoid duplicate requests
-            // Prepare read response signals
-            out_d_valid_r[bus_n]                             = 1'b1;
-            out_d_opcode_r[bus_n*`OP_BITS+:`OP_BITS]         = 1'b1;
-            out_d_size_r[bus_n*`SIZE_BITS+:`SIZE_BITS]       = out_a_size_o; 
-            out_d_source_r[bus_n*`SOURCE_BITS+:`SOURCE_BITS] = out_a_source_o;
-            out_d_param_r[bus_n*3+:3]                        = out_a_param_o; 
-            // Read data from mem (byte-wise concatenation)
-            for (int k = 0; k < `DCACHE_BLOCKWORDS*`BYTESOFWORD; k = k + 1) begin
-                out_d_data_r[(bus_n*64 + (k+1)*8) - 1 -: 8] = mem[out_a_address_o + k];
+        // Initialize all state variables
+        in_progress = 1'b0;
+        delay_cnt   = 0;
+        op_type     = 2'b00;
+        req_addr    = '0;
+        req_data    = '0;
+        req_mask    = '0;
+        req_opcode  = '0;
+        req_size    = '0;
+        req_source  = '0;
+        req_param   = '0;
+
+        // Main processing loop: Runs continuously until simulation ends
+        forever begin
+            @(posedge clk);  // Synchronize to rising clock edge
+
+            // Phase 1: Handle response completion (matches original handshake logic)
+            if (out_d_valid_i[bus_n] & out_d_ready_o[bus_n]) begin
+                out_d_valid_r[bus_n] = 1'b0;  // Deassert response validity
+                in_progress = 1'b0;           // Mark operation as complete
             end
-        end
 
-        // 3. Handle write request (opcode = 0 or 1)
-        else if (out_a_valid_o[bus_n] & out_a_ready_i[bus_n] & 
-                 ((out_a_opcode_o[(bus_n*`OP_BITS)+:`OP_BITS] == 0) || 
-                  (out_a_opcode_o[(bus_n*`OP_BITS)+:`OP_BITS] == 1))) begin
-            
-            out_a_ready_r[bus_n] = 1'b0;  // Deassert ready to avoid duplicate requests
-            // Prepare write response signals
-            out_d_valid_r[bus_n]                             = 1'b1;
-            out_d_opcode_r[bus_n*`OP_BITS+:`OP_BITS]         = 1'b0;
-            out_d_size_r[bus_n*`SIZE_BITS+:`SIZE_BITS]       = out_a_size_o; 
-            out_d_source_r[bus_n*`SOURCE_BITS+:`SOURCE_BITS] = out_a_source_o;
-            out_d_param_r[bus_n*3+:3]                        = out_a_param_o; 
-            // Write data to mem (update if mask is 1, keep original if 0)
-            for (int k = 0; k < `DCACHE_BLOCKWORDS*`BYTESOFWORD; k = k + 1) begin
-                mem[out_a_address_o + k] = out_a_mask_o[k] ? out_a_data_o[(k+1)*8 - 1 -: 8] : mem[out_a_address_o + k];
+            // Phase 2: Execute actual read/write after delay expiration
+            if (in_progress) begin
+                delay_cnt = delay_cnt + 1;  // Increment delay counter each cycle
+
+                // Read operation: Generate response after 100 cycles (0-99 count)
+                if (op_type == 2'b01 && delay_cnt >= 99) begin
+                    // Generate read response (exact logic from original code)
+                    out_d_valid_r[bus_n]                             = 1'b1;
+                    out_d_opcode_r[bus_n*`OP_BITS+:`OP_BITS]         = 1'b1;
+                    out_d_size_r[bus_n*`SIZE_BITS+:`SIZE_BITS]       = req_size;
+                    out_d_source_r[bus_n*`SOURCE_BITS+:`SOURCE_BITS] = req_source;
+                    out_d_param_r[bus_n*3+:3]                        = req_param;
+                    
+                    // Read data from memory (byte-wise concatenation as in original)
+                    for (int k = 0; k < `DCACHE_BLOCKWORDS*`BYTESOFWORD; k++) begin
+                        out_d_data_r[(bus_n*64 + (k+1)*8) - 1 -: 8] = mem[req_addr + k];
+                    end
+                    
+                    // Reset delay state
+                    delay_cnt = 0;
+                    op_type   = 2'b00;
+                end
+                // Write operation: Generate response after 50 cycles (0-49 count)
+                else if (op_type == 2'b10 && delay_cnt >= 49) begin
+                    // Generate write response (exact logic from original code)
+                    out_d_valid_r[bus_n]                             = 1'b1;
+                    out_d_opcode_r[bus_n*`OP_BITS+:`OP_BITS]         = 1'b0;
+                    out_d_size_r[bus_n*`SIZE_BITS+:`SIZE_BITS]       = req_size;
+                    out_d_source_r[bus_n*`SOURCE_BITS+:`SOURCE_BITS] = req_source;
+                    out_d_param_r[bus_n*3+:3]                        = req_param;
+                    
+                    // Write data to memory (mask-based update as in original)
+                    for (int k = 0; k < `DCACHE_BLOCKWORDS*`BYTESOFWORD; k++) begin
+                        mem[req_addr + k] = req_mask[k] ? req_data[(k+1)*8 - 1 -: 8] : mem[req_addr + k];
+                    end
+                    
+                    // Reset delay state
+                    delay_cnt = 0;
+                    op_type   = 2'b00;
+                end
             end
-        end 
 
-        // 4. Deassert response valid and re-assert request ready when L2 is ready
-        else if (out_d_valid_i[bus_n] & out_d_ready_o[bus_n]) begin
-            out_d_valid_r[bus_n] = 1'b0;
-            out_a_ready_r[bus_n] = 1'b1;
+            // Phase 3: Accept new requests (only when idle - matches original logic)
+            else begin
+                out_a_ready_r[bus_n] = 1'b1;  // Assert ready to receive new requests
+
+                // Handle read request (opcode = 4)
+                if (out_a_valid_o[bus_n] & out_a_ready_i[bus_n] & 
+                    (out_a_opcode_o[(bus_n*`OP_BITS)+:`OP_BITS] == 4)) begin
+                    
+                    out_a_ready_r[bus_n] = 1'b0;  // Deassert ready to prevent duplicates
+                    in_progress = 1'b1;           // Mark start of processing
+                    op_type = 2'b01;              // Identify as read operation
+                    delay_cnt = 0;                // Initialize delay counter
+                    
+                    // Store request parameters (direct mapping from input signals)
+                    req_addr   = out_a_address_o;
+                    req_size   = out_a_size_o;
+                    req_source = out_a_source_o;
+                    req_param  = out_a_param_o;
+                end
+                // Handle write requests (opcode = 0 or 1)
+                else if (out_a_valid_o[bus_n] & out_a_ready_i[bus_n] & 
+                        ((out_a_opcode_o[(bus_n*`OP_BITS)+:`OP_BITS] == 0) || 
+                        (out_a_opcode_o[(bus_n*`OP_BITS)+:`OP_BITS] == 1))) begin
+                    
+                    out_a_ready_r[bus_n] = 1'b0;  // Deassert ready to prevent duplicates
+                    in_progress = 1'b1;           // Mark start of processing
+                    op_type = 2'b10;              // Identify as write operation
+                    delay_cnt = 0;                // Initialize delay counter
+                    
+                    // Store request parameters (direct mapping from input signals)
+                    req_addr   = out_a_address_o;
+                    req_data   = out_a_data_o;
+                    req_mask   = out_a_mask_o;
+                    req_size   = out_a_size_o;
+                    req_source = out_a_source_o;
+                    req_param  = out_a_param_o;
+                end
+            end
         end
     end
     endtask
-
+    
 endmodule

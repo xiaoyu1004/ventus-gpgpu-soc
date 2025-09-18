@@ -110,7 +110,7 @@ int vx_dev_init(callbacks_t* callbacks) {
     return device->download(host_ptr, addr, size);
     };
 
-  callbacks->start = [](vx_device_h hdevice, metadata_buffer_t& metadata, uint64_t csr_knl_addr) {
+  callbacks->start = [](vx_device_h hdevice, metadata_buffer_t metadata, uint64_t csr_knl_addr) {
     if (nullptr == hdevice)
       return -1;
     DBGPRINT("START: hdevice=%p, knl_entry=%x, knl_args=%x\n", hdevice, metadata.knl_entry, metadata.knl_arg_base);

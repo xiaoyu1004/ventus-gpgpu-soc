@@ -1,4 +1,4 @@
-`timescale 1ns/10ps
+`timescale 1ns/1ps
 
 `include "define.v"
 
@@ -143,8 +143,8 @@ module test_gpu_top;
   tc u_tc();
 
   initial begin
-    // $fsdbDumpfile("test.fsdb")             ;
-    // $fsdbDumpvars(0,test_gpu_top,"+all");
+    $fsdbDumpfile("test.fsdb")             ;
+    $fsdbDumpvars(2,test_gpu_top,"+mda","+all");
   end
 
 task PASSED;

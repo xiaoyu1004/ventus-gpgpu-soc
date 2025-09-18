@@ -28,7 +28,7 @@
 
 class vt_device {
 public:
-  vt_device() : ram_() { processor_.attach_ram(&ram_); }
+  vt_device() : ram_(), m_first(true) { processor_.attach_ram(&ram_); }
 
   ~vt_device() {
     if (future_.valid()) {
@@ -81,6 +81,10 @@ public:
   }
 
   int mem_alloc(uint64_t *dev_addr, uint64_t size) {
+    if (m_first) {
+        size = 0x10000000ul;
+        m_first = false;
+    }
     return ram_.alloc(dev_addr, size) ? 0 : -1;
   }
 
@@ -138,4 +142,5 @@ private:
   PhysicalMemory ram_;
   Processor processor_;
   std::future<void> future_;
+  bool m_first;
 };

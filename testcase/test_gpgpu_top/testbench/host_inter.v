@@ -167,7 +167,7 @@ module host_inter(
         host_req_csr_knl_r         <= metaDataBaseAddr[31:0];
         host_req_vgpr_size_total_r <= wg_size[31:0] * vgprUsage[31:0];
         host_req_sgpr_size_total_r <= wg_size[31:0] * sgprUsage[31:0];
-        host_req_lds_size_total_r  <= 128;  // Fixed LDS size
+        host_req_lds_size_total_r  <= 256;  // Fixed LDS size
         host_req_gds_size_total_r  <= 0;    // No GDS used
         host_req_vgpr_size_per_wf_r<= vgprUsage[31:0];
         host_req_sgpr_size_per_wf_r<= sgprUsage[31:0];

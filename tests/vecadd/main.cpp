@@ -140,7 +140,7 @@ int run_kernel_test(const kernel_arg_t &kernel_arg) {
   std::cout << std::dec << "block.x:" << block.x << ", block.y:" << block.y
             << ", block.z:" << block.z << std::endl;
 
-  RT_CHECK(vx_start(device, grid, block, 0x800001e8u, knl_arg_base));
+  RT_CHECK(vx_start(device, grid, block, 0x8000019cu, knl_arg_base));
   RT_CHECK(vx_ready_wait(device, VX_MAX_TIMEOUT));
   auto t3 = std::chrono::high_resolution_clock::now();
 

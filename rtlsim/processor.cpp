@@ -141,7 +141,7 @@ public:
       INFO("cycles_: %lu", cycles_);
 
       // TODO
-      if (cycles_ > 3000) {
+      if (cycles_ > 6000) {
         break;
       }
     }
@@ -180,11 +180,11 @@ private:
     info_->warp_size = WARP_SIZE;
     info_->start_pc = 0x80000000U;
 
-    info_->pds_baseaddr = 0;
+    info_->pds_baseaddr = 0x80005000U;
     info_->csr_knl = (uint32_t)csr_knl_addr;
     info_->vgpr_size_total = info_->num_warps * 64;
     info_->sgpr_size_total = info_->num_warps * 64;
-    info_->lds_size_total = 0;
+    info_->lds_size_total = 128;
     info_->gds_size_total = 0;
     info_->vgpr_size_per_warp = 64;
     info_->sgpr_size_per_warp = 64;
@@ -249,7 +249,6 @@ private:
       device_->host_req_wg_id_i = sm_idx;
       device_->host_req_num_wf_i = info_->num_warps;
       device_->host_req_wf_size_i = info_->warp_size;
-      device_->host_req_start_pc_i = info_->start_pc;
       device_->host_req_start_pc_i = info_->start_pc;
       device_->host_req_kernel_size_x_i = info_->grid_idx.x;
       device_->host_req_kernel_size_y_i = info_->grid_idx.y;

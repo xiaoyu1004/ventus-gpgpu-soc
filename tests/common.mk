@@ -20,8 +20,7 @@ CFLAGS += -O3 -cl-std=CL2.0 -target riscv32 -mcpu=ventus-gpgpu -nodefaultlibs
 CFLAGS += -I$(RUNTIME_DIR) -I$(LLVM_VENTUS)/include -I$(LLVM_VENTUS)/libclc/generic/include -I$(LLVM_VENTUS)/../libclc/riscv32/lib
 CFLAGS += -DNDEBUG $(CL_SRCS)
 
-# LIBC_LIB += -L$(LLVM_VENTUS)/lib $(LLVM_VENTUS)/lib/crt0.o -lworkitem
-LIBC_LIB += -L$(LLVM_VENTUS)/lib -lworkitem
+LIBC_LIB += -L$(LLVM_VENTUS)/lib $(LLVM_VENTUS)/lib/crt0.o -lworkitem
 
 LDFLAGS += -Wl,-T,$(LLVM_VENTUS)/../utils/ldscripts/ventus/elf32lriscv.ld $(LIBC_LIB)
 
